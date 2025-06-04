@@ -11,6 +11,7 @@ local VeryNginxConfig = require "VeryNginxConfig"
 local encrypt_seed = require "encrypt_seed"
 local json = require "json"
 local util = require "util"
+local keepalive = require "keepalive"  -- 添加 keepalive 模块
 
 local _M = {}
 
@@ -123,6 +124,7 @@ _M.route_table = {
     { ['method'] = "GET",  ['auth']= true,  ["path"] = "/config", ['handle'] = VeryNginxConfig.report },
     { ['method'] = "POST", ['auth']= true,  ["path"] = "/config", ['handle'] = VeryNginxConfig.set },
     { ['method'] = "GET",  ['auth']= true,  ["path"] = "/loadconfig", ['handle'] = VeryNginxConfig.load_from_file },
+    { ['method'] = "GET",  ['auth']= false,  ["path"] = "/nodes/status", ['handle'] = keepalive.get_all_nodes_status },  -- 新增路由
 }
 
 

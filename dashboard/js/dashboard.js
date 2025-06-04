@@ -215,17 +215,29 @@ dashboard.open_modal_dashboard_config = function(){
     dashboard.status_dashboard_update_interval_label();
 }
 
-dashboard.save_status_dashboard_config = function(){
+dashboard.nodes_status_update_interval_label = function() {
+    var interval = $('input[name="nodes_refresh_interval"]').val();
+    $('div[name="nodes_refresh_interval_label"]').text(interval + 's');
+},
+
+dashboard.save_status_dashboard_config = function() {
+    var config = {};
+    config.enable_animation = $('input[name="enable_animation"]').prop('checked');
+    config.refresh_interval = parseInt($('input[name="refresh_interval"]').val());
+    config.nodes_refresh_interval = parseInt($('input[name="nodes_refresh_interval"]').val());
     
-    var enable_animation = $('#status_config_modal [name=enable_animation]')[0].checked;
-    var refresh_interval = $('#status_config_modal [name=refresh_interval]').val();
-
-    localStorage.dashboard_status_enable_animation = enable_animation;
-    localStorage.dashboard_status_refresh_interval = refresh_interval;
-
-    $('#status_config_modal').modal('hide');
+    // Save to localStorage
+    localStorage.dashboard_status_enable_animation = config.enable_animation;
+    localStorage.dashboard_status_refresh_interval = config.refresh_interval;
+    localStorage.dashboard_status_nodes_refresh_interval = config.nodes_refresh_interval;
+    
+    // 更新图表刷新间隔
     monitor.update_config();
-}
+    // 更新节点状态刷新间隔
+    nodes_status.set_update_interval(config.nodes_refresh_interval);
+    
+    $('#status_config_modal').modal('hide');
+},
 
 dashboard.status_dashboard_update_interval_label = function(){
 

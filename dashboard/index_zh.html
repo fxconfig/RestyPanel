@@ -30,9 +30,11 @@
 <script src="js/pace.min.js"></script>
 <script src="js/tips.js"></script>
 <script src="js/data_stat.js"></script>
+<script src="js/nodes_status.js"></script>
 <script type="text/javascript">
     $(document).ready(function(){
         dashboard.init();
+        nodes_status.init();
     });
 </script>
 </head>
@@ -123,15 +125,19 @@
                     </div>
                 </div>
 
-                <div class="monitor_container" spin_size="default">
-                    <canvas id="chart_request" width="1400" height="400"></canvas>
+                <div class="row">
+                    <div class="col-md-12">
+                        <div class="monitor_container" spin_size="default">
+                            <canvas id="chart_request" style="width:100%; height:300px;"></canvas>
+                        </div>
+                    </div>
                 </div>
                 
                 <div class="row">
                     <div class="col-md-4">
                         <div class="status_sub_group_title">TCP连接数</div>
                         <div class="monitor_container" spin_size="sm">
-                            <canvas id="chart_connection" width="700" height="400"></canvas>
+                            <canvas id="chart_connection" style="width:100%; height:250px;"></canvas>
                         </div>
 
                         <div class="container-fluid" style="margin-top:-10px">
@@ -150,15 +156,13 @@
                                 </div>
                             </div>
                         </div>
-
-
                     </div>
 
                     <div class="col-md-4">
                         <div class="status_sub_group_title">响应时间</div>
                         <div class="status_sub_group_title_desc"> (ms) </div>
                         <div class="monitor_container" spin_size="sm">
-                            <canvas id="chart_response_time" width="700" height="400"></canvas>
+                            <canvas id="chart_response_time" style="width:100%; height:250px;"></canvas>
                         </div>
                     </div>
 
@@ -166,7 +170,7 @@
                         <div class="status_sub_group_title">网络流量</div>
                         <div class="status_sub_group_title_desc"> (KiB/s) </div>
                         <div class="monitor_container" spin_size="sm">
-                            <canvas id="chart_traffic" width="700" height="400"></canvas>
+                            <canvas id="chart_traffic" style="width:100%; height:250px;"></canvas>
                         </div>
                         
                         <div class="container-fluid" style="margin-top:-10px">
@@ -181,9 +185,30 @@
                                 </div>
                             </div>
                         </div>
-
                     </div>
+                </div>
 
+                <!-- 节点健康状态表格 -->
+                <div class="row" style="margin-top: 20px;">
+                    <div class="col-md-12">
+                        <div class="status_sub_group_title">节点健康状态</div>
+                        <div class="monitor_container" spin_size="sm">
+                            <div class="table-responsive">
+                                <table class="table table-bordered" id="nodes_status_table">
+                                    <thead>
+                                        <tr>
+                                            <th>节点名称</th>
+                                            <th>状态</th>
+                                            <th>最后检查时间</th>
+                                            <th>状态信息</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="nodes_status_body">
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- Modal -->
@@ -209,6 +234,15 @@
                                             <input type="range" name="refresh_interval" value="3" min="1" max="15" oninput="dashboard.status_dashboard_update_interval_label()">
                                         </div>
                                         <div class="col-sm-2" name="refresh_interval_label">
+                                            3s
+                                        </div>
+                                    </div>
+                                    <div class="row vn_modal_row" >
+                                        <label class="col-sm-5 text-right" >节点状态刷新间隔</label>
+                                        <div class="col-sm-5">
+                                            <input type="range" name="nodes_refresh_interval" value="3" min="1" max="15" oninput="dashboard.nodes_status_update_interval_label()">
+                                        </div>
+                                        <div class="col-sm-2" name="nodes_refresh_interval_label">
                                             3s
                                         </div>
                                     </div>

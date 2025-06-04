@@ -7,12 +7,48 @@
 local _M = {}
 local VeryNginxConfig = require "VeryNginxConfig"
 local http = require "resty.http"
+local json = require "json"
+
+-- 定义共享内存的键
+local KEY_NODE_STATUS = "NODE_STATUS_"  -- 节点状态前缀
+local KEY_NODE_LAST_CHECK = "NODE_LAST_CHECK_"  -- 最后检查时间前缀
+local KEY_NODE_LAST_ERROR = "NODE_LAST_ERROR_"  -- 最后错误信息前缀
+
+
+
 local function split(str, sep)
     if not str then return {} end
     local fields = {}
     local pattern = string.format("([^%s]+)", sep or " ")
     str:gsub(pattern, function(c) fields[#fields + 1] = c end)
     return fields
+end
+
+-- 获取所有节点状态
+function _M.get_all_nodes_status()
+    local all_status = {}
+    local upstreams = VeryNginxConfig.configs.backend_upstream or {}
+    
+    for upstream_name, upstream in pairs(upstreams) do
+        if upstream.node then
+            all_status[upstream_name] = {}
+            for node_name, node_config in pairs(upstream.node) do
+                local node_id = upstream_name .. ":" .. node_name
+                local status = {
+                    is_healthy = ngx.shared.status:get(KEY_NODE_STATUS .. node_id),
+                    last_check = ngx.shared.status:get(KEY_NODE_LAST_CHECK .. node_id),
+                    last_error = ngx.shared.status:get(KEY_NODE_LAST_ERROR .. node_id),
+                    host = node_config.host,
+                    port = node_config.port,
+                    scheme = node_config.scheme,
+                    enable = node_config.enable
+                }
+                all_status[upstream_name][node_name] = status
+            end
+        end
+    end
+    
+    return json.encode(all_status)
 end
 
 
@@ -32,7 +68,7 @@ function _M.check_node(rule)
         ngx.log(ngx.ERR, "Invalid node format: ", node)
         return
     end
-
+ 
     local upstream_name = parts[1]
     local node_name = parts[2]
     local upstream = VeryNginxConfig.configs.backend_upstream[upstream_name]
@@ -42,33 +78,66 @@ function _M.check_node(rule)
         return
     end
 
-    local node = "skynet"
-    local host = "127.0.0.1"
-    local port = 7777
-    local scheme = "http"
-    local timeout = 5
+    local host = upstream.node[node_name].host
+    local port = upstream.node[node_name].port
+    local scheme = upstream.node[node_name].scheme
 
-        -- 使用 ngx.location.capture 进行健康检查
-    local res = ngx.location.capture("/internal_health_check", {
-            args = {
-                backend = "127.0.0.1:7777",
-                path = "/ping"
-            },
-            method = ngx.HTTP_GET
-        })
+    -- 创建 HTTP 客户端实例
+    local httpc = http.new()
+    httpc:set_timeout(timeout * 1000)  -- 设置超时时间（毫秒）
+    -- 尝试建立连接
+    local ok, err = httpc:connect(host, port)
+    if not ok then
+        ngx.log(ngx.ERR, "Failed to connect to node ", node, ": ", err)
+        -- 更新节点状态为不健康
+        ngx.shared.status:set(KEY_NODE_STATUS .. node, false)
+        ngx.shared.status:set(KEY_NODE_LAST_CHECK .. node, ngx.time())
+        ngx.shared.status:set(KEY_NODE_LAST_ERROR .. node, "Connection failed: " .. (err or "unknown error"))
+        return
+    end
+    -- Make HTTP request to check node health
+    local res, err = httpc:request({
+        method = "GET",
+        path = check_url,
+        headers = {
+            ["Host"] = host,
+            ["User-Agent"] = "VeryNginx/1.0"
+        },
+        host = host,
+        port = port
+    })
+    -- 确保关闭连接
+    httpc:close()
     
-
     if not res then
         ngx.log(ngx.ERR, "Failed to check node ", node, ": ", err)
+        -- 更新节点状态为不健康
+        ngx.shared.status:set(KEY_NODE_STATUS .. node, false)
+        ngx.shared.status:set(KEY_NODE_LAST_ERROR .. node, "Request failed: " .. (err or "unknown error"))
         return
     end
 
     if res.status ~= 200 then
         ngx.log(ngx.ERR, "Node ", node, " returned status ", res.status)
+        -- 更新节点状态为不健康
+        ngx.shared.status:set(KEY_NODE_STATUS .. node, false)
+        ngx.shared.status:set(KEY_NODE_LAST_ERROR .. node, "HTTP status: " .. res.status)
         return
     end
-
+    -- 更新节点状态为健康
+    ngx.shared.status:set(KEY_NODE_STATUS .. node, true)
+    ngx.shared.status:set(KEY_NODE_LAST_ERROR .. node, nil)
     ngx.log(ngx.INFO, "Node ", node, " is healthy")
+end
+
+-- 获取节点状态
+function _M.get_node_status(node)
+    local status = {
+        is_healthy = ngx.shared.status:get(KEY_NODE_STATUS .. node),
+        last_check = ngx.shared.status:get(KEY_NODE_LAST_CHECK .. node),
+        last_error = ngx.shared.status:get(KEY_NODE_LAST_ERROR .. node)
+    }
+    return status
 end
 
 function _M.init()

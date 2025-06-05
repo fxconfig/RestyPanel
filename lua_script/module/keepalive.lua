@@ -158,4 +158,58 @@ function _M.init()
     end
 end
 
+-- 生成 upstream.conf 文件
+function _M.generate_upstream_conf(healthy_only)
+    local upstreams = VeryNginxConfig.configs.backend_upstream or {}
+    local lines = {}
+    for upstream_name, upstream in pairs(upstreams) do
+        if upstream.node then
+            local node_lines = {}
+            for node_name, node_config in pairs(upstream.node) do
+                local node_id = upstream_name .. ":" .. node_name
+                local is_healthy = ngx.shared.status:get(KEY_NODE_STATUS .. node_id)
+                if (not healthy_only) or is_healthy then
+                    local host = node_config.host
+                    local port = node_config.port or 80
+                    table.insert(node_lines, string.format("  server %s:%s;", host, port))
+                end
+            end
+            if #node_lines > 0 then
+                table.insert(lines, string.format("upstream %s {", upstream_name))
+                for _, l in ipairs(node_lines) do
+                    table.insert(lines, l)
+                end
+                table.insert(lines, "}")
+            end
+            -- 如果 node_lines 为空，则不生成该 upstream
+        end
+    end
+    local content = table.concat(lines, "\n")
+    local new_md5 = ngx.md5(content)
+    local last_md5 = ngx.shared.status:get('vn_upstream_conf_md5')
+    if new_md5 == last_md5 then
+        ngx.log(ngx.INFO, "upstream.conf md5 not changed, skip writing file.")
+        return true, "not changed"
+    end
+    --local file_path = ngx.config.prefix() .. "/../verynginx/nginx_conf/upstream.conf"
+    local file_path = "/opt/verynginx/verynginx/nginx_conf/upstream.conf"
+    local file, err = io.open(file_path, "w")
+    if not file then
+        ngx.log(ngx.ERR, "Failed to open upstream.conf for writing: ", err)
+        return false, err
+    end
+    file:write(content)
+    file:close()
+    ngx.shared.status:set('vn_upstream_conf_md5', new_md5)
+    ngx.log(ngx.INFO, "upstream.conf generated at ", file_path)
+    -- 自动 reload nginx
+    local reload_ret = os.execute("/opt/verynginx/openresty/nginx/sbin/nginx -s reload")
+    if reload_ret == 0 then
+        ngx.log(ngx.INFO, "nginx reload success after upstream.conf update")
+    else
+        ngx.log(ngx.ERR, "nginx reload failed after upstream.conf update, ret=", reload_ret)
+    end
+    return true
+end
+
 return _M

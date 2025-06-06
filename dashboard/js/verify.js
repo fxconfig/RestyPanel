@@ -190,7 +190,20 @@ verify.url_or_uri = function(){
     return handle;
 }
 
-verify.path = verify.uri;
+verify.path = function(){
+    return function(value){
+        if( value == undefined || value == null || value == '' ){
+            return '路径不能为空';
+        }
+        if( value.indexOf('..') != -1 ){
+            return '路径不能包含 ..';
+        }
+        if( value.indexOf('//') != -1 ){
+            return '路径不能包含 //';
+        }
+        return '';
+    }
+}
 
 verify.ngx_time = function(){
     var handle = function(v){

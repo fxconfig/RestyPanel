@@ -181,7 +181,6 @@ function _M.generate_upstream_conf(healthy_only)
                 end
                 table.insert(lines, "}")
             end
-            -- 如果 node_lines 为空，则不生成该 upstream
         end
     end
     local content = table.concat(lines, "\n")
@@ -191,8 +190,9 @@ function _M.generate_upstream_conf(healthy_only)
         ngx.log(ngx.INFO, "upstream.conf md5 not changed, skip writing file.")
         return true, "not changed"
     end
-    --local file_path = ngx.config.prefix() .. "/../verynginx/nginx_conf/upstream.conf"
-    local file_path = "/opt/verynginx/verynginx/nginx_conf/upstream.conf"
+
+    -- 使用配置的路径
+    local file_path = VeryNginxConfig.configs.upstream_conf_path or "/opt/verynginx/verynginx/nginx_conf/upstream.conf"
     local file, err = io.open(file_path, "w")
     if not file then
         ngx.log(ngx.ERR, "Failed to open upstream.conf for writing: ", err)

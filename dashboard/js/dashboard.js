@@ -225,7 +225,7 @@ dashboard.save_status_dashboard_config = function() {
     config.enable_animation = $('input[name="enable_animation"]').prop('checked');
     config.refresh_interval = parseInt($('input[name="refresh_interval"]').val());
     config.nodes_refresh_interval = parseInt($('input[name="nodes_refresh_interval"]').val());
-    
+
     // Save to localStorage
     localStorage.dashboard_status_enable_animation = config.enable_animation;
     localStorage.dashboard_status_refresh_interval = config.refresh_interval;
@@ -235,7 +235,7 @@ dashboard.save_status_dashboard_config = function() {
     monitor.update_config();
     // 更新节点状态刷新间隔
     nodes_status.set_update_interval(config.nodes_refresh_interval);
-    
+
     $('#status_config_modal').modal('hide');
 },
 

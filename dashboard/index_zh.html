@@ -127,7 +127,7 @@
 
                 <div class="row">
                     <div class="col-md-12">
-                        <div class="monitor_container" spin_size="default">
+                <div class="monitor_container" spin_size="default">
                             <canvas id="chart_request" style="width:100%; height:300px;"></canvas>
                         </div>
                     </div>
@@ -186,7 +186,7 @@
                             </div>
                         </div>
                     </div>
-                </div>
+                    </div>
 
                 <!-- 节点健康状态表格 -->
                 <div class="row" style="margin-top: 20px;">
@@ -295,6 +295,7 @@
                             <div class="leftnav_group" group="system">
                                 <div class="leftnav leftnav_2" config_name="system_general" onclick="dashboard.switch_to_config(this)">通用</div>
                                 <div class="leftnav leftnav_2" config_name="system_admin" onclick="dashboard.switch_to_config(this)">用户</div>
+                                <div class="leftnav leftnav_2" config_name="system_env" onclick="dashboard.switch_to_config(this)">环境变量</div>
                                 <div class="leftnav leftnav_2" config_name="system_allconfig" onclick="dashboard.switch_to_config(this)">所有配置</div>
                             </div>
                         </div>
@@ -2118,6 +2119,34 @@
                                     </div>
                                 </div>
                             </form>
+                        </div>
+
+                        <div class="config_container" id="config_system_env">
+                            <div class="config_title">
+                                环境变量
+                            </div>
+                            <hr>
+                            
+                            <div class="config_sub_title">
+                                系统路径
+                            </div>
+
+                            <div class="vn-config-box row">
+                                <div class="col-sm-2 vn-config-label">Upstream 配置文件路径</div>
+                                <div class="col-sm-10">
+                                    <input class="form-control vn-config-input" type="text" v-model="config_now.upstream_conf_path" 
+                                        placeholder="/opt/verynginx/verynginx/nginx_conf/upstream.conf" 
+                                        vn_data_verify="verify.path()" 
+                                        onchange="vnform.verify_input_with_notice(this)">
+                                    <span class="help-block">upstream.conf 文件的完整路径</span>
+                                </div>
+                            </div>
+
+                            <div class="vn-config-box row">
+                                <div class="col-sm-offset-2 col-sm-10">
+                                    <button type="button" class="btn btn-default" onclick="config.save_config()">保存</button>
+                                </div>
+                            </div>
                         </div>
                     </div>
 

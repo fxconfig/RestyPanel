@@ -259,6 +259,56 @@ matcher_editor.form_meta = {
             ]
         }
     ],
+    'Body':[
+        {
+            'group_name':'Name of argument want to test',
+            'input':[
+                {
+                    'title':'operator',
+                    'name':'name_operator',
+                    'type':"select",
+                    'options':{
+                        'Equal [=]':"=",
+                        'Not Equal [!=]':"!=",
+                        'Match RegEx [≈]':"≈",
+                        'Not Matche RegEx [!≈]':"!≈",
+                        'Any [*]':"*",
+                    }
+                },
+                {
+                    'title':'value',
+                    'name':'name_value',
+                    'type':'input',
+                    'placeholder':'',
+                }
+            ]
+        },
+        {
+            'group_name':'value of argument',
+            'input':[
+                {
+                    'title':'operator',
+                    'name':'operator',
+                    'type':"select",
+                    'options':{
+                        'Match RegEx [≈]':"≈",
+                        'Not Matche RegEx [!≈]':"!≈",
+                        'Equal [=]':"=",
+                        'Not Equal [!=]':"!=",
+                        'Existed':"Exist",
+                        'Not Existed':"!Exist",
+                    }
+                },
+                {
+                    'title':'value',
+                    'name':'operator',
+                    'name':'value',
+                    'type':'input',
+                    'placeholder':'',
+                }
+            ]
+        }
+    ],
     'Cookie':[
          {
             'group_name':'Name of cookie want to test',

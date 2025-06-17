@@ -6,7 +6,7 @@
 
 local _M = {}
 local VeryNginxConfig = require "VeryNginxConfig"
-local http = require "resty.http"
+local http = require "http"
 local json = require "json"
 
 -- 定义共享内存的键

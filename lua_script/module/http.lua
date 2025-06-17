@@ -1,4 +1,4 @@
-local http_headers = require "resty.http_headers"
+local http_headers = require "http_headers"
 
 local ngx = ngx
 local ngx_socket_tcp = ngx.socket.tcp
@@ -163,7 +163,7 @@ function _M.set_timeouts(self, connect_timeout, send_timeout, read_timeout)
 end
 
 do
-    local aio_connect = require "resty.http_connect"
+    local aio_connect = require "http_connect"
     -- Function signatures to support:
     -- ok, err, ssl_session = httpc:connect(options_table)
     -- ok, err = httpc:connect(host, port, options_table?)

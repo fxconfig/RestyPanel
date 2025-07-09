@@ -266,9 +266,7 @@ const app = createApp({
             } 
             // 如果切换到上游页，加载上游数据
             else if (newPage === 'upstreams') {
-                if (!upstreamsManager.data.value.length) {
-                    upstreamsManager.updateUpstreamStatus();
-                }
+                upstreamsManager.updateUpstreamStatus();
             }
             // 如果切换到服务器页，加载服务器数据
             else if (newPage === 'servers') {

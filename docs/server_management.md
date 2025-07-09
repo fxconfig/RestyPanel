@@ -46,20 +46,16 @@ include /app/configs/server_*.conf;
 
 #### 状态流转图
 
-```
-                         ┌───── update ─────┐
-                         ↓                  │
-创建新配置 ─────→ backup (待测试) ───┐       │
-                                    │       │
-                               test │       │
-                                    ↓       │
-                       ┌────── disabled ◄───┘
-                       │       (已禁用)
-                       │           ↑
-               enable  │           │  disable
-                       │           │
-                       └───────→ enabled
-                                (生效中)
+```mermaid
+flowchart TB
+    start([创建新配置]) --> backup[backup 待测试]
+    backup --> test{test}
+    test -->|成功| disabled[disabled 已禁用]
+    test -->|失败| backup
+    backup -->|update| backup
+    disabled -->|enable| enabled[enabled 生效中]
+    enabled -->|disable| disabled
+    disabled -->|update| backup
 ```
 
 #### 状态流转规则

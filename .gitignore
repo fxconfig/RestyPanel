@@ -1,0 +1,34 @@
+# RestyPanel .gitignore
+
+# 日志文件
+/logs/*.log
+/logs/*/*.log
+
+# 临时文件和缓存
+*.tmp
+*.cache
+*.swp
+*.bak
+.DS_Store
+Thumbs.db
+
+# IDE 相关文件
+.idea/
+.vscode/
+*.sublime-project
+*.sublime-workspace
+
+# 编译输出
+*.luac
+
+# 临时配置文件
+app/configs/*.conf.failed
+app/configs/*.conf.backup
+
+# 环境文件
+.env
+.env.local
+.env.*.local
+
+# 依赖目录
+/node_modules/ 

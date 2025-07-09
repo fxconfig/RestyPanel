@@ -1,0 +1,14 @@
+{
+    "jwt_secret":"RestyPanel-JWT-Secret-Key-2024",
+    "users":[{"user":"RestyPanel","password":"RestyPanel"}],
+    "jwt_expires":86400,
+    "enable":true,
+    "base_uri":"/asd1239axasd",
+    "dashboard_host":"",
+    "api_mode":true,
+    "last_updated":0,
+    "paths": {
+        "logs_dir": "/var/log/nginx/",
+        "reports_dir": "/app/web/reports/"
+    }
+}

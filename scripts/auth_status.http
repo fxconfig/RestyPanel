@@ -1,0 +1,373 @@
+# VeryNginx 简化 REST API 测试套件
+# 使用 VSCode REST Client 扩展测试
+# 仅包含已实现的 API 端点
+# API响应格式: { code, data, message, detail }
+
+@host = http://127.0.0.1:8765
+@api_base = {{host}}/asd1239axasd/api
+@content_type = application/json
+
+
+### ============= 认证 =============
+
+### 用户登录
+# @name login
+POST {{api_base}}/auth/login
+Content-Type: {{content_type}}
+
+{
+  "username": "RestyPanel",
+  "password": "RestyPanel"
+}
+
+### 提取 JWT Token (新格式)
+@access_token = {{login.response.body.$.data.access_token}}
+
+### 获取用户信息
+GET {{api_base}}/auth/profile
+Authorization: Bearer {{access_token}}
+
+### 刷新 JWT Token
+# @name refresh
+POST {{api_base}}/auth/refresh
+Authorization: Bearer {{access_token}}
+
+###
+@new_token = {{refresh.response.body.$.data.access_token}}
+
+### 用户登出
+POST {{api_base}}/auth/logout
+Authorization: Bearer {{access_token}}
+
+
+### ============= 测试新API格式 ============
+
+### 测试API响应格式
+GET {{api_base}}/test
+Authorization: Bearer {{access_token}}
+
+### 测试API响应格式
+GET {{api_base}}/test/nginx
+Authorization: Bearer {{access_token}}
+
+### ============= 系统健康检查 =============
+
+### 健康检查
+GET {{api_base}}/health
+
+### 获取系统状态
+GET {{api_base}}/status
+Authorization: Bearer {{access_token}}
+
+### 获取系统摘要
+GET {{api_base}}/summary
+Authorization: Bearer {{access_token}}
+
+### ============= Upstream 管理 =============
+
+### 获取所有upstream
+GET {{api_base}}/upstreams
+Authorization: Bearer {{access_token}}
+
+### 创建upstream
+POST {{api_base}}/upstreams
+Content-Type: {{content_type}}
+Authorization: Bearer {{access_token}}
+
+{
+  "enable": true,
+  "name": "backend_server",
+  "servers": [
+    {
+      "server": "192.168.1.100:8080",
+      "weight": 1
+    }
+  ]
+}
+
+### 获取单个upstream
+GET {{api_base}}/upstreams/backend_server
+Authorization: Bearer {{access_token}}
+
+### 更新upstream
+PUT {{api_base}}/upstreams/backend_server
+Content-Type: {{content_type}}
+Authorization: Bearer {{access_token}}
+
+{
+  "servers": [
+    {
+      "server": "192.168.1.11:8182",
+      "weight": 2
+    },
+    {
+      "server": "192.168.1.101:8080",
+      "weight": 1
+    }
+  ]
+}
+
+### 删除upstream
+DELETE {{api_base}}/upstreams/backend_server
+Authorization: Bearer {{access_token}}
+
+###
+GET {{api_base}}/upstream/status
+Authorization: Bearer {{access_token}}
+
+### ============= Matcher 管理 =============
+
+### 获取所有匹配器
+GET {{api_base}}/matchers
+Authorization: Bearer {{access_token}}
+
+### ============= Responses 模板 =============
+
+### 获取所有响应模板
+GET {{api_base}}/responses
+Authorization: Bearer {{access_token}}
+
+### 创建响应模板
+POST {{api_base}}/responses
+Content-Type: {{content_type}}
+Authorization: Bearer {{access_token}}
+
+{
+  "name": "api_blocked",
+  "content_type": "application/json",
+  "body": "{\"error\": \"API access denied\", \"code\": 403}",
+  "status_code": 403,
+  "description": "API 访问被拒绝"
+}
+
+### 获取单个响应模板
+GET {{api_base}}/responses/api_blocked
+Authorization: Bearer {{access_token}}
+
+### 更新响应模板
+PUT {{api_base}}/responses/api_blocked
+Content-Type: {{content_type}}
+Authorization: Bearer {{access_token}}
+
+{
+  "content_type": "application/json",
+  "body": "{\"error\": \"API access forbidden\", \"code\": 403, \"message\": \"Access denied\"}",
+  "status_code": 403,
+  "description": "更新后的 API 访问被拒绝"
+}
+
+### 删除响应模板  
+DELETE {{api_base}}/responses/api_blocked
+Authorization: Bearer {{access_token}}
+
+### ============= Filters 过滤规则 =============
+
+### 获取所有过滤规则
+GET {{api_base}}/filters
+Authorization: Bearer {{access_token}}
+
+### 创建过滤规则
+POST {{api_base}}/filters
+Content-Type: {{content_type}}
+Authorization: Bearer {{access_token}}
+
+{
+  "matcher": "api_requests",
+  "response": "api_blocked",
+  "action": "block",
+  "enable": true,
+  "description": "阻止特定 API 访问"
+}
+
+### 获取单个过滤规则
+GET {{api_base}}/filters/1
+Authorization: Bearer {{access_token}}
+
+### 更新过滤规则
+PUT {{api_base}}/filters/1
+Content-Type: {{content_type}}
+Authorization: Bearer {{access_token}}
+
+{
+  "description": "更新后的过滤规则描述",
+  "enable": false
+}
+
+### 启用/禁用过滤规则
+POST {{api_base}}/filters/1/toggle
+Authorization: Bearer {{access_token}}
+
+### 启用/禁用整个过滤系统
+POST {{api_base}}/filters/toggle
+Authorization: Bearer {{access_token}}
+
+### 删除过滤规则
+DELETE {{api_base}}/filters/1
+Authorization: Bearer {{access_token}}
+
+### ============= Frequency Limits 频率限制 =============
+
+### 获取所有频率限制规则
+GET {{api_base}}/frequency-limits
+Authorization: Bearer {{access_token}}
+
+### 创建频率限制规则
+POST {{api_base}}/frequency-limits
+Content-Type: {{content_type}}
+Authorization: Bearer {{access_token}}
+
+{
+  "matcher": "api_requests",
+  "count": 100,
+  "period": 60,
+  "action": "block",
+  "response": "api_blocked",
+  "enable": true,
+  "description": "API 频率限制"
+}
+
+### 获取单个频率限制规则
+GET {{api_base}}/frequency-limits/1
+Authorization: Bearer {{access_token}}
+
+### 更新频率限制规则
+PUT {{api_base}}/frequency-limits/1
+Content-Type: {{content_type}}
+Authorization: Bearer {{access_token}}
+
+{
+  "count": 200,
+  "period": 60,
+  "description": "更新后的频率限制规则"
+}
+
+### 启用/禁用频率限制规则
+POST {{api_base}}/frequency-limits/1/toggle
+Authorization: Bearer {{access_token}}
+
+### 启用/禁用频率限制系统
+POST {{api_base}}/frequency-limits/toggle
+Authorization: Bearer {{access_token}}
+
+### 删除频率限制规则
+DELETE {{api_base}}/frequency-limits/1
+Authorization: Bearer {{access_token}}
+
+### ============= Redirects 重定向规则 =============
+
+### 获取所有重定向规则
+GET {{api_base}}/redirects
+Authorization: Bearer {{access_token}}
+
+### 创建重定向规则
+POST {{api_base}}/redirects
+Content-Type: {{content_type}}
+Authorization: Bearer {{access_token}}
+
+{
+  "matcher": "api_requests",
+  "to_uri": "https://api.example.com$1",
+  "replace_re": "^/api(.*)$",
+  "code": 301,
+  "enable": true,
+  "description": "API 重定向到新域名"
+}
+
+### 获取单个重定向规则
+GET {{api_base}}/redirects/1
+Authorization: Bearer {{access_token}}
+
+### 更新重定向规则
+PUT {{api_base}}/redirects/1
+Content-Type: {{content_type}}
+Authorization: Bearer {{access_token}}
+
+{
+  "to_uri": "https://newapi.example.com$1",
+  "code": 302,
+  "description": "更新后的重定向规则"
+}
+
+### 启用/禁用重定向规则
+POST {{api_base}}/redirects/1/toggle
+Authorization: Bearer {{access_token}}
+
+### 启用/禁用重定向系统
+POST {{api_base}}/redirects/toggle
+Authorization: Bearer {{access_token}}
+
+### 删除重定向规则
+DELETE {{api_base}}/redirects/1
+Authorization: Bearer {{access_token}}
+
+### ============= Scheme Locks 协议锁定 =============
+
+### 获取所有协议锁定规则
+GET {{api_base}}/scheme-locks
+Authorization: Bearer {{access_token}}
+
+### 创建协议锁定规则
+POST {{api_base}}/scheme-locks
+Content-Type: {{content_type}}
+Authorization: Bearer {{access_token}}
+
+{
+  "matcher": "api_requests",
+  "scheme": "https",
+  "action": "redirect",
+  "enable": true,
+  "description": "强制 API 使用 HTTPS"
+}
+
+### 获取单个协议锁定规则
+GET {{api_base}}/scheme-locks/1
+Authorization: Bearer {{access_token}}
+
+### 更新协议锁定规则
+PUT {{api_base}}/scheme-locks/1
+Content-Type: {{content_type}}
+Authorization: Bearer {{access_token}}
+
+{
+  "scheme": "https",
+  "action": "block",
+  "description": "更新后的协议锁定规则"
+}
+
+### 启用/禁用协议锁定规则
+POST {{api_base}}/scheme-locks/1/toggle
+Authorization: Bearer {{access_token}}
+
+### 启用/禁用协议锁定系统
+POST {{api_base}}/scheme-locks/toggle
+Authorization: Bearer {{access_token}}
+
+### 删除协议锁定规则
+DELETE {{api_base}}/scheme-locks/1
+Authorization: Bearer {{access_token}}
+
+### ============= 错误处理测试 =============
+
+### 访问不存在的资源
+GET {{api_base}}/matchers/nonexistent
+Authorization: Bearer {{access_token}}
+
+### 发送无效数据
+POST {{api_base}}/matchers
+Content-Type: {{content_type}}
+Authorization: Bearer {{access_token}}
+
+{
+  "invalid_field": "test"
+}
+
+### 删除不存在的资源
+DELETE {{api_base}}/filters/999
+Authorization: Bearer {{access_token}}
+
+### 测试无效 Token
+GET {{api_base}}/auth/profile
+Authorization: Bearer invalid_token
+
+### 测试未授权访问
+GET {{api_base}}/matchers

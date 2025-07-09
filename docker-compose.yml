@@ -1,0 +1,14 @@
+
+services:
+  restypanel:
+    build: .
+    container_name: restypanel
+    ports:
+      - "80:80"
+      - "8003:8003"
+      - "8765:8765"
+    volumes:
+      - ./logs:/var/log/nginx
+      - ./nginx.conf:/usr/local/openresty/nginx/conf/nginx.conf:ro
+      - ./app:/app
+    

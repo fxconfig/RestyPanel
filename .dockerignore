@@ -1,0 +1,10 @@
+.git
+README.md
+docker-compose.yml
+.dockerignore
+logs/
+*.log
+.DS_Store
+Thumbs.db 
+
+.luarc.json

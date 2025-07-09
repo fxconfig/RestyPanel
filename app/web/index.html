@@ -1,0 +1,1130 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Resty Panel</title>
+
+    <!-- 样式文件 -->
+    <link rel="stylesheet" href="css/main.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/theme/dracula.min.css">
+
+    <!-- Vue 3 CDN -->
+    <script src="js/cdn/vue.global.js"></script>
+    <!-- Axios for API calls -->
+    <script src="js/cdn/axios.min.js"></script>
+    <script src="js/cdn/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/nginx/nginx.min.js"></script>
+</head>
+
+<body>
+    <div id="app" v-cloak>
+        <!-- 登录页面 -->
+        <div v-if="!isAuthenticated" class="login-container">
+            <div class="login-box">
+                <div class="login-header">
+                    <h2>Login to Resty Panel</h2>
+                    <p>Enter your credentials to access the dashboard</p>
+                </div>
+
+                <form @submit.prevent="handleLogin" class="login-form">
+                    <div class="form-group">
+                        <label for="username">Username</label>
+                        <input type="text" id="username" v-model="loginForm.username" required :disabled="isLoading"
+                            autocomplete="username">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="password">Password</label>
+                        <input type="password" id="password" v-model="loginForm.password" required :disabled="isLoading"
+                            autocomplete="current-password">
+                    </div>
+
+                    <button type="submit" class="login-btn" :disabled="isLoading">
+                        <span v-if="isLoading">Logging in...</span>
+                        <span v-else>Login</span>
+                    </button>
+
+                    <div v-if="error" class="error-message">
+                        {{ error }}
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- 左侧侧边栏 -->
+        <aside class="sidebar" :class="{ collapsed: sidebarCollapsed }" v-if="isAuthenticated">
+            <div class="sidebar-header">
+                <div class="brand-logo">
+                    <h1 v-show="!sidebarCollapsed">RestyPanel</h1>
+                    <span v-show="sidebarCollapsed" class="brand-icon">R</span>
+                </div>
+                <button @click="toggleSidebar" class="toggle-btn">
+                    <span v-if="sidebarCollapsed">›</span>
+                    <span v-else>‹</span>
+                </button>
+            </div>
+
+            <nav class="sidebar-nav">
+                <button @click="handlePageChange('status')" :class="{ active: currentPage === 'status' }"
+                    class="nav-item">
+                    <span class="nav-icon">📊</span>
+                    <span v-show="!sidebarCollapsed" class="nav-text">Status</span>
+                </button>
+                <button @click="handlePageChange('upstreams')" :class="{ active: currentPage === 'upstreams' }"
+                    class="nav-item">
+                    <span class="nav-icon">🌐</span>
+                    <span v-show="!sidebarCollapsed" class="nav-text">Upstreams</span>
+                </button>
+                <button @click="handlePageChange('servers')" :class="{ active: currentPage === 'servers' }"
+                    class="nav-item">
+                    <span class="nav-icon">🖥️</span>
+                    <span v-show="!sidebarCollapsed" class="nav-text">Servers</span>
+                </button>
+                <button @click="handlePageChange('waf')" :class="{ active: currentPage === 'waf' }" class="nav-item">
+                    <span class="nav-icon">🛡️</span>
+                    <span v-show="!sidebarCollapsed" class="nav-text">WAF</span>
+                </button>
+                <div class="nav-item-with-submenu">
+                    <button @click="toggleLogsSubmenu"
+                        :class="{ active: currentPage === 'logs' || currentPage === 'reports' }" class="nav-item">
+                        <span class="nav-icon">📜</span>
+                        <span v-show="!sidebarCollapsed" class="nav-text">Logs</span>
+                        <span v-show="!sidebarCollapsed" class="submenu-toggle">{{ logsSubmenuOpen ? '▼' : '▶' }}</span>
+                    </button>
+                    <div v-show="!sidebarCollapsed && logsSubmenuOpen" class="submenu">
+                        <button @click="handlePageChange('logs')" :class="{ active: currentPage === 'logs' }"
+                            class="submenu-item">
+                            <span>Log Files</span>
+                        </button>
+                        <button @click="handlePageChange('reports')" :class="{ active: currentPage === 'reports' }"
+                            class="submenu-item">
+                            <span>Recent Reports</span>
+                        </button>
+                    </div>
+                </div>
+                <button @click="handlePageChange('settings')" :class="{ active: currentPage === 'settings' }"
+                    class="nav-item">
+                    <span class="nav-icon">⚙️</span>
+                    <span v-show="!sidebarCollapsed" class="nav-text">Settings</span>
+                </button>
+            </nav>
+
+            <div class="sidebar-footer">
+                <div v-show="!sidebarCollapsed" class="version-info">
+                    <small>Max.Tech Pt.y v1.0</small>
+                </div>
+            </div>
+        </aside>
+
+        <!-- 主内容区域 -->
+        <div class="main-layout" :class="{ 'sidebar-collapsed': sidebarCollapsed }" v-if="isAuthenticated">
+            <!-- 移动端菜单按钮 -->
+            <button @click="toggleSidebar" class="mobile-menu-btn">
+                <span class="hamburger-icon">☰</span>
+            </button>
+
+            <!-- 移动端侧边栏覆盖层 -->
+            <div class="sidebar-overlay" :class="{ show: !sidebarCollapsed }" @click="closeSidebar"></div>
+
+            <!-- 顶部状态栏 -->
+            <header class="top-bar">
+                <div class="top-bar-left">
+                    <h1 class="page-title">{{ getPageTitle() }}</h1>
+                </div>
+                <div class="top-bar-right">
+                    <div class="user-info">
+                        <span class="user-name">{{ user.username }}</span>
+                    </div>
+                    <button @click="logout" class="top-logout-btn">
+                        <span class="logout-icon">🚪</span>
+                        <span class="logout-text">Logout</span>
+                    </button>
+                </div>
+            </header>
+
+            <main class="main-content">
+                <!-- Status 页面 -->
+                <div v-if="currentPage === 'status'" class="status-page">
+
+                    <!-- 状态概览和控件 -->
+                    <div class="status-overview">
+                        <div class="status-card">
+                            <h4>Total Requests</h4>
+                            <div class="status-value">{{ statusData.request_all_count ?? '--' }}</div>
+                            <div class="status-delta">Success: {{ statusData.request_success_count ?? '--' }}</div>
+                        </div>
+
+                        <div class="status-card">
+                            <h4>Active Connections</h4>
+                            <div class="status-value">{{ statusData.connections_active ?? '--' }}</div>
+                            <div class="status-delta">
+                                R: {{ statusData.connections_reading ?? '--' }} |
+                                W: {{ statusData.connections_writing ?? '--' }} |
+                                Wait: {{ statusData.connections_waiting ?? '--' }}
+                            </div>
+                        </div>
+
+                        <div class="status-card">
+                            <h4>Traffic Read</h4>
+                            <div class="status-value">{{ statusData.traffic_read != null ?
+                                formatBytes(statusData.traffic_read) : '--' }}</div>
+                            <div class="status-delta">Write: {{ statusData.traffic_write != null ?
+                                formatBytes(statusData.traffic_write) : '--' }}</div>
+                        </div>
+
+                        <div class="status-card">
+                            <h4>Start Time</h4>
+                            <div class="status-value">{{ formatUptime(statusData.boot_time) }}</div>
+                            <div class="status-delta">Start at: {{ formatBootTime(statusData.boot_time) }}</div>
+                        </div>
+
+                        <div class="status-card controls-card">
+                            <h4>Controls</h4>
+                            <div class="status-delta">
+                                <div class="controls-row">
+                                    <label class="auto-refresh-label">
+                                        <input type="checkbox" v-model="autoRefresh" @change="toggleAutoRefresh">
+                                        <span>Auto Refresh</span>
+                                    </label>
+                                    <select v-if="autoRefresh" v-model="refreshInterval" @change="updateRefreshInterval"
+                                        class="interval-select">
+                                        <option value="3">3s</option>
+                                        <option value="5">5s</option>
+                                        <option value="10">10s</option>
+                                        <option value="15">15s</option>
+                                        <option value="30">30s</option>
+                                    </select>
+                                    <button v-if="!autoRefresh" @click="refreshStatus" :disabled="isRefreshing"
+                                        class="refresh-btn">
+                                        <span v-if="isRefreshing">Refreshing...</span>
+                                        <span v-else>Refresh</span>
+                                    </button>
+                                </div>
+                                <div class="controls-row">
+                                    <label class="time-window-label">
+                                        <span>Time Window: </span>
+                                        <select v-model="timeWindow" @change="updateTimeWindow"
+                                            class="time-window-select">
+                                            <option value="60">1Min</option>
+                                            <option value="300">5Mins</option>
+                                            <option value="600">10Mins</option>
+                                            <option value="1800">30Mins</option>
+                                            <option value="3600">1Hour</option>
+                                        </select>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 图表区域 -->
+                    <div class="charts-grid">
+                        <div class="chart-container">
+                            <div class="chart-header">
+                                <h3>Request Rate (per second)</h3>
+                                <div class="chart-legend">
+                                    <div class="legend-item">
+                                        <div class="legend-dot" style="background-color: #3b82f6;"></div>
+                                        <span>Total RPS</span>
+                                    </div>
+                                    <div class="legend-item">
+                                        <div class="legend-dot" style="background-color: #10b981;"></div>
+                                        <span>Success RPS</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="chart-wrapper">
+                                <canvas id="requestChart"></canvas>
+                            </div>
+                        </div>
+
+                        <div class="chart-container">
+                            <div class="chart-header">
+                                <h3>Network Traffic (bytes per second)</h3>
+                                <div class="chart-legend">
+                                    <div class="legend-item">
+                                        <div class="legend-dot" style="background-color: #8b5cf6;"></div>
+                                        <span>Read</span>
+                                    </div>
+                                    <div class="legend-item">
+                                        <div class="legend-dot" style="background-color: #f59e0b;"></div>
+                                        <span>Write</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="chart-wrapper">
+                                <canvas id="trafficChart"></canvas>
+                            </div>
+                        </div>
+
+                        <div class="chart-container">
+                            <div class="chart-header">
+                                <h3>Connection Count</h3>
+                                <div class="chart-legend">
+                                    <div class="legend-item">
+                                        <div class="legend-dot" style="background-color: #ef4444;"></div>
+                                        <span>Active</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="chart-wrapper">
+                                <canvas id="connectionChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Upstreams 页面 -->
+                <div v-if="currentPage === 'upstreams'" class="upstreams-page">
+                    <div class="page-header flex-between">
+                        <div>
+                            <h2>Upstream Status</h2>
+                            <p>Real-time health of upstream servers</p>
+                        </div>
+                        <div class="upstream-controls">
+                            <label class="auto-refresh-label">
+                                <input type="checkbox" v-model="upstreamsManager.autoRefresh.value"
+                                    @change="upstreamsManager.toggleAutoRefresh()">
+                                <span>Auto Refresh</span>
+                            </label>
+
+                            <select v-if="upstreamsManager.autoRefresh.value"
+                                v-model="upstreamsManager.refreshInterval.value"
+                                @change="upstreamsManager.updateRefreshInterval()" class="interval-select">
+                                <option value="3">3s</option>
+                                <option value="5">5s</option>
+                                <option value="10">10s</option>
+                                <option value="15">15s</option>
+                                <option value="30">30s</option>
+                            </select>
+
+                            <button v-if="!upstreamsManager.autoRefresh.value"
+                                @click="upstreamsManager.updateUpstreamStatus()"
+                                :disabled="upstreamsManager.isLoading.value" class="refresh-btn">
+                                <span v-if="upstreamsManager.isLoading.value">Refreshing...</span>
+                                <span v-else>Refresh</span>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="action-bar">
+
+                        <button class="show-upstream-conf-btn" @click="upstreamsManager.openShowConfModal()">
+                            <span>📄</span>
+                            <span>Show upstream.conf</span>
+                        </button>
+                        <button class="add-upstream-btn" @click="upstreamsManager.openAddModal()">
+                            <span>+</span>
+                            <span>Add Upstream</span>
+                        </button>
+                        <div v-if="upstreamsManager.lastUpdateTime.value" class="last-update-time">
+                            Last updated: {{ formatLastUpdateTime(upstreamsManager.lastUpdateTime.value) }}
+                        </div>
+                    </div>
+
+                    <div v-if="upstreamsManager.isLoading.value" class="loading-indicator">Loading upstreams…</div>
+
+                    <div v-else class="upstreams-grid">
+                        <div v-for="up in upstreamsManager.data.value" :key="up.name" class="upstream-card"
+                            :class="{ 'disabled': !up.enable }">
+                            <div class="upstream-header">
+                                <div class="upstream-title">
+                                    <h3>{{ up.name }}</h3>
+                                    <span v-if="!up.hasCheckers" class="checker-status"
+                                        @click="upstreamsManager.openHealthCheckerModal(up.name)">
+                                        ⚠️ NO Health Checker
+                                    </span>
+                                    <span v-else class="checker-status checking"
+                                        @click="upstreamsManager.openHealthCheckerModal(up.name)">
+                                        🔄 checking ...
+                                    </span>
+                                </div>
+                                <div class="upstream-status">
+                                    <div class="dropdown">
+                                        <button @click="upstreamsManager.toggleDropdown(up.name)"
+                                            class="dropdown-toggle-btn action-btn" title="Actions">
+                                            <span>⋯</span>
+                                        </button>
+                                        <div v-if="upstreamsManager.activeDropdown.value === up.name"
+                                            class="dropdown-menu">
+                                            <button @click="upstreamsManager.toggleUpstream(up.name, !up.enable)"
+                                                class="dropdown-item">
+                                                {{ up.enable ? 'Disable' : 'Enable' }}
+                                            </button>
+                                            <button @click="upstreamsManager.openEditModal(up.name)"
+                                                class="dropdown-item">
+                                                Edit JSON
+                                            </button>
+                                            <button @click="upstreamsManager.openAddServerModal(up.name)"
+                                                class="dropdown-item">
+                                                Add Server
+                                            </button>
+                                            <button @click="upstreamsManager.confirmDelete(up.name)"
+                                                class="dropdown-item danger">
+                                                Delete
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <table class="server-table">
+                                <thead>
+                                    <tr>
+                                        <th>Address</th>
+                                        <th>Weight</th>
+                                        <th>Status</th>
+                                        <th>Enable</th>
+                                        <th>Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr v-for="srv in up.servers" :key="srv.address">
+                                        <td>{{ srv.address }}</td>
+                                        <td>{{ srv.weight ?? '--' }}</td>
+                                        <td>
+                                            <span :class="['status-badge', 
+                                                srv.status === 'UP' ? 'up' : 
+                                                srv.status === 'DOWN' ? 'down' : 
+                                                'unknown']">
+                                                {{ srv.status }}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <label class="toggle-switch"
+                                                :title="srv.enable ? 'Disable server' : 'Enable server'">
+                                                <input type="checkbox" :checked="srv.enable"
+                                                    @change="upstreamsManager.toggleServer(up.name, srv.address, $event.target.checked)"
+                                                    :disabled="srv.isToggling">
+                                                <span class="toggle-slider"></span>
+                                            </label>
+                                        </td>
+                                        <td>
+                                            <button class="delete-server-btn"
+                                                @click="upstreamsManager.confirmDeleteServer(up.name, srv.address)">
+                                                ×
+                                            </button>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- 编辑 Upstream 配置模态框 -->
+                    <div v-if="upstreamsManager.showEditModal.value" class="modal-overlay"
+                        @click="upstreamsManager.closeEditModal()">
+                        <div class="modal-content" @click.stop>
+                            <div class="modal-header">
+                                <h3>{{ upstreamsManager.editingUpstream.value?.name ? 'Edit' : 'Add' }} Upstream
+                                    Configuration</h3>
+                                <button class="modal-close-btn" @click="upstreamsManager.closeEditModal()">×</button>
+                            </div>
+                            <div class="modal-body">
+                                <div class="form-group">
+                                    <label>Upstream Name:</label>
+                                    <input type="text" v-model="upstreamsManager.editingUpstream.value.name" readonly
+                                        class="form-input readonly">
+                                </div>
+                                <div class="form-group">
+                                    <label>Configuration (JSON):</label>
+                                    <textarea v-model="upstreamsManager.editingConfigText.value" class="config-textarea"
+                                        rows="15" placeholder="Enter upstream configuration in JSON format">
+                                    </textarea>
+                                </div>
+                                <div v-if="upstreamsManager.editError.value" class="error-message">
+                                    {{ upstreamsManager.editError.value }}
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button @click="upstreamsManager.closeEditModal()" class="btn-secondary">Cancel</button>
+                                <button @click="upstreamsManager.saveUpstreamConfig()"
+                                    :disabled="upstreamsManager.isSaving.value" class="btn-primary">
+                                    <span v-if="upstreamsManager.isSaving.value">Saving...</span>
+                                    <span v-else>Save</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Servers 页面 -->
+                <div v-if="currentPage === 'servers'" class="servers-page">
+                    <div class="page-header flex-between">
+                        <div>
+                            <h2>Server Management</h2>
+                            <p>Monitor and configure nginx server blocks</p>
+                        </div>
+                        <div class="server-controls">
+                            <button @click="serversManager.refreshServerList()"
+                                :disabled="serversManager.isLoading.value" class="refresh-btn">
+                                <span v-if="serversManager.isLoading.value">Refreshing...</span>
+                                <span v-else>Refresh</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="action-bar">
+                        <button class="add-server-btn" @click="serversManager.openCreateModal()">
+                            <span>+</span>
+                            <span>Create Server</span>
+                        </button>
+                        <div v-if="serversManager.lastUpdateTime.value" class="last-update-time">
+                            Last updated: {{ formatLastUpdateTime(serversManager.lastUpdateTime.value) }}
+                        </div>
+                    </div>
+
+                    <!-- 状态统计卡片 -->
+                    <div class="status-summary">
+                        <div class="status-card">
+                            <h4>Total Servers</h4>
+                            <div class="status-value">{{ serversManager.summary.total || 0 }}</div>
+                        </div>
+                        <div class="status-card">
+                            <h4>Enabled</h4>
+                            <div class="status-value">{{ serversManager.summary.enabled || 0 }}</div>
+                        </div>
+                        <div class="status-card">
+                            <h4>Disabled</h4>
+                            <div class="status-value">{{ serversManager.summary.disabled || 0 }}</div>
+                        </div>
+                        <div class="status-card">
+                            <h4>Backup</h4>
+                            <div class="status-value">{{ serversManager.summary.backup || 0 }}</div>
+                        </div>
+                    </div>
+
+                    <div v-if="serversManager.isLoading.value" class="loading-indicator">Loading servers…</div>
+
+                    <div v-else-if="!serversManager.servers.value || serversManager.servers.value.length === 0"
+                        class="empty-state">
+                        <div class="empty-icon">🖥️</div>
+                        <h3>No Server Configurations</h3>
+                        <p>Create your first server configuration to get started</p>
+                        <button @click="serversManager.openCreateModal()" class="btn-primary">Create Server</button>
+                    </div>
+
+                    <div v-else class="servers-grid">
+                        <div v-for="server in serversManager.servers.value" :key="server.name" class="server-card"
+                            :class="'status-' + server.status" @click="serversManager.handleServerCardClick(server)">
+                            <div class="server-header">
+                                <div class="server-title">
+                                    <h3>{{ server.name }}</h3>
+                                    <div class="server-status-badge" :class="server.status">
+                                        {{ server.status.toUpperCase() }}
+                                    </div>
+                                </div>
+                                <div class="server-actions">
+                                    <button class="action-btn delete-btn"
+                                        @click.stop="serversManager.confirmDeleteServer(server.name)">
+                                        Delete
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="server-details">
+                                <div class="server-info">
+                                    <div class="info-row">
+                                        <span class="info-label">Server Names:</span>
+                                        <span class="info-value">{{ serversManager.getServerNames(server) }}</span>
+                                    </div>
+                                    <div class="info-row">
+                                        <span class="info-label">Size:</span>
+                                        <span class="info-value">{{ server.size }} bytes</span>
+                                    </div>
+                                    <div class="info-row">
+                                        <span class="info-label">Updated:</span>
+                                        <span class="info-value">{{ formatLastUpdateTime(server.updated_at) }}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 创建/编辑服务器模态框 -->
+                    <div v-if="serversManager.showEditModal.value" class="modal-overlay"
+                        @click="serversManager.closeEditModal()">
+                        <div class="modal-content large-modal" @click.stop>
+                            <div class="modal-header">
+                                <h3>{{ serversManager.getModalTitle() }}</h3>
+                                <div class="modal-header-actions">
+                                    <button @click="serversManager.closeEditModal()"
+                                        class="btn-secondary">Cancel</button>
+
+                                    <button v-if="serversManager.showSaveButton.value"
+                                        @click="serversManager.saveServer()" :disabled="serversManager.isSaving.value"
+                                        class="btn-primary">
+                                        <span v-if="serversManager.isSaving.value">Saving...</span>
+                                        <span v-else>Save</span>
+                                    </button>
+
+                                    <button v-if="serversManager.showTestButton.value"
+                                        @click="serversManager.testServer()" class="btn-secondary test-btn"
+                                        :disabled="serversManager.isSaving.value || serversManager.isTesting.value">
+                                        <span v-if="serversManager.isTesting.value">Testing...</span>
+                                        <span v-else>Test</span>
+                                    </button>
+
+                                    <button v-if="serversManager.showEnableButton.value"
+                                        @click="serversManager.enableServerFromModal()" class="btn-primary enable-btn">
+                                        Enable
+                                    </button>
+
+                                    <button v-if="serversManager.showDisableButton.value"
+                                        @click="serversManager.disableServerFromModal()" class="action-btn disable-btn">
+                                        Disable
+                                    </button>
+                                </div>
+                                <button class="modal-close-btn" @click="serversManager.closeEditModal()">×</button>
+                            </div>
+                            <div class="modal-body">
+                                <div class="form-group" v-if="!serversManager.isEditing.value">
+                                    <label>Server Name:</label>
+                                    <input type="text" v-model="serversManager.editForm.value.name" class="form-input"
+                                        placeholder="example">
+                                    <small class="form-help">Unique identifier for this server configuration</small>
+                                </div>
+                                <div class="form-group">
+                                    <label>Configuration:</label>
+                                    <textarea id="server-config-editor" v-model="serversManager.editForm.value.content"
+                                        class="config-textarea code-editor" rows="20" placeholder="server {
+    listen 80;
+    server_name example.com;
+    
+    location / {
+        return 200 'Hello World';
+    }
+}"></textarea>
+                                </div>
+                                <div v-if="serversManager.editError.value" class="error-message">
+                                    {{ serversManager.editError.value }}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 查看服务器模态框 -->
+
+                </div>
+
+                <!-- WAF 页面 -->
+                <div v-if="currentPage === 'waf'" class="page-content">
+                    <div class="page-header">
+                        <h2>Web Application Firewall</h2>
+                        <p>Security rules and threat protection</p>
+                    </div>
+                    <div class="placeholder-content">
+                        <div class="placeholder-card">
+                            <h3>🛡️ Security Rules</h3>
+                            <p>Configure firewall rules and security policies</p>
+                            <div class="feature-list">
+                                <span class="feature-tag">Rate Limiting</span>
+                                <span class="feature-tag">IP Filtering</span>
+                                <span class="feature-tag">Attack Detection</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 日志分析页面 -->
+                <div v-if="currentPage === 'logs'" class="logs-page">
+                    <div class="page-header flex-between">
+                        <div>
+                            <h2>Log Analysis</h2>
+                            <p>View and analyze access logs with GoAccess</p>
+                        </div>
+                        <div class="logs-controls">
+                            <button @click="logsManager.fetchLogFiles()" :disabled="logsManager.isLoading.value"
+                                class="refresh-btn">
+                                <span v-if="logsManager.isLoading.value">Refreshing...</span>
+                                <span v-else>Refresh</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- 日志文件列表和内容查看区域 -->
+                    <div class="logs-container">
+                        <!-- 左侧文件列表 -->
+                        <div class="logs-sidebar">
+                            <div class="logs-sidebar-header">
+                                <h3>Log Files</h3>
+                                <div v-if="logsManager.lastUpdateTime.value" class="last-update-time">
+                                    Last updated: {{ formatLastUpdateTime(logsManager.lastUpdateTime.value) }}
+                                </div>
+                            </div>
+                            <div v-if="logsManager.isLoading.value && !logsManager.files.value.length"
+                                class="loading-indicator">
+                                Loading logs...
+                            </div>
+                            <div v-else-if="!logsManager.files.value.length" class="empty-state">
+                                <p>No log files found</p>
+                            </div>
+                            <ul v-else class="logs-file-list">
+                                <li v-for="file in logsManager.files.value" :key="file.name"
+                                    @click="logsManager.selectFile(file.name)"
+                                    :class="{ active: logsManager.currentFile.value === file.name }">
+                                    <div class="log-file-name">{{ file.name }}</div>
+                                    <div class="log-file-info">
+                                        <span>{{ logsManager.formatSize(file.size) }}</span>
+                                        <span>{{ new Date(file.modified * 1000).toLocaleString() }}</span>
+                                    </div>
+                                </li>
+                            </ul>
+                        </div>
+
+                        <!-- 右侧内容区域 -->
+                        <div class="logs-content">
+                            <div v-if="!logsManager.currentFile.value" class="logs-placeholder">
+                                <div class="logs-placeholder-icon">📜</div>
+                                <h3>Select a log file to view</h3>
+                                <p>Choose a file from the list on the left</p>
+                            </div>
+                            <div v-else class="logs-viewer">
+                                <!-- 工具栏 -->
+                                <div class="log-content-toolbar" style="display: flex; align-items: center; gap: 10px;">
+                                    <!-- 刷新按钮 -->
+                                    <button @click="logsManager.fetchLogContent()"
+                                        :disabled="logsManager.isLoading.value" class="refresh-btn">
+                                        刷新
+                                    </button>
+                                    <!-- 快速分析/查看报告按钮 -->
+                                    <a :href="logsManager.quickReportUrl.value" target="_blank"
+                                        v-if="logsManager.quickReportUrl.value && logsManager.currentFile.value === logsManager.reports.value[0]?.filename"
+                                        class="btn-secondary">
+                                        查看报告
+                                    </a>
+                                    <button @click="logsManager.quickAnalyzeLog()" v-else
+                                        :disabled="!logsManager.currentFile.value || logsManager.isLoading.value"
+                                        class="btn-primary">
+                                        <span v-if="logsManager.isLoading.value">分析中...</span>
+                                        <span v-else>快速分析</span>
+                                    </button>
+                                    <!-- 高级分析按钮 -->
+                                    <button type="button" class="btn-secondary" @click="logsManager.openAnalyzeModal()"
+                                        :disabled="logsManager.isLoading.value">
+                                        高级分析
+                                    </button>
+                                    <!-- 搜索框和按钮 -->
+                                    <input type="text" v-model="logsManager.filter.value"
+                                        @keyup.enter="logsManager.applyFilter()" placeholder="搜索日志..."
+                                        class="form-input" style="flex-grow: 1;">
+                                    <button @click="logsManager.applyFilter()" class="btn-secondary">
+                                        搜索
+                                    </button>
+                                </div>
+
+                                <!-- 日志内容 -->
+                                <div class="logs-content-view">
+                                    <div v-if="logsManager.isLoading.value" class="loading-indicator">
+                                        Loading content...
+                                    </div>
+                                    <div v-else-if="!logsManager.content.value.length" class="empty-state">
+                                        <p>No content found or no matches for filter</p>
+                                    </div>
+                                    <div v-else class="logs-content-lines">
+                                        <pre v-for="(line, index) in logsManager.content.value" :key="index"
+                                            class="log-line">{{ line }}</pre>
+                                    </div>
+                                </div>
+
+                                <!-- 分页控件 -->
+                                <div v-if="logsManager.pagination.value.total_pages > 1" class="logs-pagination">
+                                    <button @click="logsManager.goToPage(1)"
+                                        :disabled="logsManager.pagination.value.current_page === 1"
+                                        class="pagination-btn">
+                                        &laquo;
+                                    </button>
+                                    <button @click="logsManager.goToPage(logsManager.pagination.value.current_page - 1)"
+                                        :disabled="logsManager.pagination.value.current_page === 1"
+                                        class="pagination-btn">
+                                        &lsaquo;
+                                    </button>
+                                    <span class="pagination-info">
+                                        Page {{ logsManager.pagination.value.current_page }} of {{
+                                        logsManager.pagination.value.total_pages }}
+                                        logsManager.pagination.value.total_pages }}
+                                    </span>
+                                    <button @click="logsManager.goToPage(logsManager.pagination.value.current_page + 1)"
+                                        :disabled="logsManager.pagination.value.current_page === logsManager.pagination.value.total_pages"
+                                        class="pagination-btn">
+                                        &rsaquo;
+                                    </button>
+                                    <button @click="logsManager.goToPage(logsManager.pagination.value.total_pages)"
+                                        :disabled="logsManager.pagination.value.current_page === logsManager.pagination.value.total_pages"
+                                        class="pagination-btn">
+                                        &raquo;
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Settings 页面 -->
+                <div v-if="currentPage === 'settings'" class="page-content">
+                    <div class="page-header">
+                        <h2>System Settings</h2>
+                        <p>Configure system preferences and global options</p>
+                    </div>
+
+                    <!-- 路径配置卡片 -->
+                    <div class="settings-card">
+                        <h3>Path Settings</h3>
+                        <p>Configure directory paths for logs and reports</p>
+
+                        <div class="settings-form">
+                            <div class="form-group">
+                                <label for="logs-dir">Logs Directory:</label>
+                                <input type="text" id="logs-dir" v-model="pathSettings.logs_dir" class="form-input"
+                                    placeholder="/var/log/nginx/">
+                                <small class="form-help">Directory where Nginx log files are stored</small>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="reports-dir">Reports Directory:</label>
+                                <input type="text" id="reports-dir" v-model="pathSettings.reports_dir"
+                                    class="form-input" placeholder="/app/web/reports/">
+                                <small class="form-help">Directory where generated reports will be stored</small>
+                            </div>
+
+                            <div v-if="pathSettingsError" class="error-message">{{ pathSettingsError }}</div>
+
+                            <div class="form-actions">
+                                <button @click="savePathSettings" :disabled="isSavingPaths" class="btn-primary">
+                                    <span v-if="isSavingPaths">Saving...</span>
+                                    <span v-else>Save Path Settings</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Reports 页面 -->
+                <div v-if="currentPage === 'reports'" class="reports-page">
+                    <div class="page-header flex-between">
+                        <div>
+                            <h2>Log Analysis Reports</h2>
+                            <p><a href="https://github.com/allinurl/goaccess" target="_blank">GoAccess</a> generated
+                                these log analysis reports</p>
+                        </div>
+                        <div class="reports-controls">
+                            <button @click="logsManager.fetchReports()" :disabled="logsManager.isLoading.value"
+                                class="refresh-btn">
+                                <span v-if="logsManager.isLoading.value">Refreshing...</span>
+                                <span v-else>Refresh</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- 分组报告列表 -->
+                    <div v-if="logsManager.groupedReports.value && Object.keys(logsManager.groupedReports.value).length > 0"
+                        class="grouped-reports-section">
+                        <!-- 全局操作按钮 -->
+                        <div class="global-actions">
+                            <button @click="logsManager.deleteAllReports()" class="btn-danger"
+                                :disabled="logsManager.isLoading.value">
+                                <span>🗑️ Delete All Reports</span>
+                            </button>
+                        </div>
+
+                        <!-- 按日志文件分组的报告 -->
+                        <div v-for="(reports, logFile) in logsManager.groupedReports.value" :key="logFile"
+                            class="report-group">
+                            <div class="report-group-header" @click="logsManager.toggleReportGroup(logFile)">
+                                <div class="group-title">
+                                    <span class="group-toggle">{{ logsManager.expandedGroups.value[logFile] ? '▼' : '►'
+                                        }}</span>
+                                    <span class="group-name">{{ logFile }}</span>
+                                    <span class="group-count">({{ reports.length }})</span>
+                                </div>
+                                <div class="group-actions">
+                                    <button @click.stop="logsManager.openRealtimeModal(logFile)"
+                                        class="btn-secondary btn-sm">
+                                        <span>🔄 Real-time</span>
+                                    </button>
+                                    <button @click.stop="logsManager.deleteReportsByLogFile(logFile)"
+                                        class="btn-danger btn-sm">
+                                        <span>🗑️ Delete All</span>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- 展开的报告列表 -->
+                            <div v-if="logsManager.expandedGroups.value[logFile]" class="report-group-content">
+                                <div v-for="(report, index) in reports" :key="index" class="report-item">
+                                    <div class="report-info">
+                                        <div class="report-name">{{ logsManager.formatReportName(report.name) }}</div>
+                                        <div class="report-time">{{ new Date(report.modified * 1000).toLocaleString() }}
+                                        </div>
+                                    </div>
+                                    <div class="report-actions">
+                                        <a :href="report.url" target="_blank" class="view-report-btn">View</a>
+                                        <button @click.stop="logsManager.deleteReport(report.id)"
+                                            class="btn-danger btn-sm ml-2" title="Delete report">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div v-else class="empty-state">
+                        <div class="empty-icon">📊</div>
+                        <h3>No Reports Available</h3>
+                        <p>Analyze logs to generate reports</p>
+                        <button @click="handlePageChange('logs')" class="btn-primary">Go to Logs</button>
+                    </div>
+
+                </div>
+            </main>
+
+        </div>
+
+        <!-- 通知队列弹窗 -->
+        <div class="notification-stack">
+            <div v-for="n in notifications" :key="n.id" class="notification-popup"
+                :class="[n.type, n.leaving ? 'hiding' : '']">
+                <div class="notification-content">
+                    <span class="notification-icon">{{ n.icon }}</span>
+                    <span class="notification-message">{{ n.message }}</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 展示 upstream.conf 的只读模态框 -->
+        <div v-if="upstreamsManager.showConfModal.value" class="modal-overlay"
+            @click="upstreamsManager.closeShowConfModal()">
+            <div class="modal-content large-modal" @click.stop>
+                <div class="modal-header">
+                    <h3>upstream.conf (readonly)</h3>
+                    <button class="modal-close-btn" @click="upstreamsManager.closeShowConfModal()">×</button>
+                </div>
+                <div class="modal-body">
+                    <div id="upstream-config-viewer"></div>
+                    <div v-if="upstreamsManager.confError.value" class="error-message">{{
+                        upstreamsManager.confError.value }}</div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn-secondary" @click="upstreamsManager.closeShowConfModal()">Close</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 健康检查参数设置模态框 -->
+        <div v-if="upstreamsManager.showHealthCheckerModal.value" class="modal-overlay"
+            @click="upstreamsManager.closeHealthCheckerModal()">
+            <div class="modal-content" style="max-width:700px;" @click.stop>
+                <div class="modal-header">
+                    <h3>Set Health Checker for <b>{{ upstreamsManager.currentEditingUpstream }}</b></h3>
+                    <button class="modal-close-btn" @click="upstreamsManager.closeHealthCheckerModal()">×</button>
+                </div>
+                <div class="modal-body">
+                    <table class="server-table health-check-table" style="margin-bottom:1.5rem;">
+                        <thead>
+                            <tr>
+                                <th>Parameter</th>
+                                <th>Value</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><span title="Check type: 'http' or 'https'">type</span></td>
+                                <td>
+                                    <select v-model="upstreamsManager.healthCheckerForm.type" class="form-input"
+                                        style="width:100px">
+                                        <option value="http">http</option>
+                                        <option value="https">https</option>
+                                    </select>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><span title="Raw HTTP request for checking">http_req</span></td>
+                                <td>
+                                    <textarea v-model="upstreamsManager.healthCheckerForm.http_req" rows="4"
+                                        class="form-input" style="width:100%"></textarea>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><span title="Check port (default: backend server port)">port</span></td>
+                                <td><input v-model="upstreamsManager.healthCheckerForm.port" type="number" min="0"
+                                        class="form-input" style="width:120px"></td>
+                            </tr>
+                            <tr>
+                                <td><span title="Check cycle interval (ms)">interval</span></td>
+                                <td><input v-model="upstreamsManager.healthCheckerForm.interval" type="number" min="100"
+                                        class="form-input" style="width:120px"></td>
+                            </tr>
+                            <tr>
+                                <td><span title="Timeout for network operations (ms)">timeout</span></td>
+                                <td><input v-model="upstreamsManager.healthCheckerForm.timeout" type="number" min="100"
+                                        class="form-input" style="width:120px"></td>
+                            </tr>
+                            <tr>
+                                <td><span title="Failures before marking down">fall</span></td>
+                                <td><input v-model="upstreamsManager.healthCheckerForm.fall" type="number" min="1"
+                                        class="form-input" style="width:120px"></td>
+                            </tr>
+                            <tr>
+                                <td><span title="Successes before marking up">rise</span></td>
+                                <td><input v-model="upstreamsManager.healthCheckerForm.rise" type="number" min="1"
+                                        class="form-input" style="width:120px"></td>
+                            </tr>
+                            <tr>
+                                <td><span title="Valid HTTP status codes (comma separated)">valid_statuses</span></td>
+                                <td><input v-model="upstreamsManager.healthCheckerForm.valid_statuses"
+                                        class="form-input" style="width:100%"></td>
+                            </tr>
+                            <tr>
+                                <td><span title="Concurrency level for test requests">concurrency</span></td>
+                                <td><input v-model="upstreamsManager.healthCheckerForm.concurrency" type="number"
+                                        min="1" class="form-input" style="width:120px"></td>
+                            </tr>
+                            <tr>
+                                <td><span title="Verify SSL certificate (https only)">ssl_verify</span></td>
+                                <td>
+                                    <input v-model="upstreamsManager.healthCheckerForm.ssl_verify" type="checkbox"
+                                        :disabled="upstreamsManager.healthCheckerForm.type !== 'https'">
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><span title="Host name in SSL handshake (https only)">host</span></td>
+                                <td>
+                                    <input v-model="upstreamsManager.healthCheckerForm.host"
+                                        :disabled="upstreamsManager.healthCheckerForm.type !== 'https'"
+                                        class="form-input" style="width:140px">
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <div style="color:#718096;font-size:0.95rem;">* Leave a field blank to use the default value.</div>
+                    <div v-if="upstreamsManager.healthCheckerError.value" class="error-message">{{
+                        upstreamsManager.healthCheckerError.value }}</div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn-secondary" @click="upstreamsManager.closeHealthCheckerModal()">Cancel</button>
+                    <button class="btn-primary" @click="upstreamsManager.saveHealthChecker()">Save</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 添加服务器模态框 -->
+        <div v-if="upstreamsManager.showAddServerModal.value" class="modal-overlay"
+            @click="upstreamsManager.closeAddServerModal()">
+            <div class="modal-content" @click.stop>
+                <div class="modal-header">
+                    <h3>Add Server to <b>{{ upstreamsManager.currentUpstreamForAddServer.value }}</b></h3>
+                    <button class="modal-close-btn" @click="upstreamsManager.closeAddServerModal()">×</button>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label>Server Address (e.g., 192.168.1.1:8080)</label>
+                        <input type="text" v-model="upstreamsManager.addServerForm.value.address" class="form-input"
+                            placeholder="host:port">
+                    </div>
+                    <div class="form-group">
+                        <label>Weight</label>
+                        <input type="number" v-model="upstreamsManager.addServerForm.value.weight" class="form-input"
+                            placeholder="1">
+                    </div>
+
+                    <div v-if="upstreamsManager.addServerError.value" class="error-message">
+                        {{ upstreamsManager.addServerError.value }}
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn-secondary" @click="upstreamsManager.closeAddServerModal()">Cancel</button>
+                    <button class="btn-primary" @click="upstreamsManager.saveNewServer()"
+                        :disabled="upstreamsManager.isSaving.value">
+                        <span v-if="upstreamsManager.isSaving.value">Saving...</span>
+                        <span v-else>Save</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 日志分析模态框 -->
+        <div v-if="logsManager.showReportModal.value" class="modal-overlay" @click="logsManager.closeAnalyzeModal()">
+            <div class="modal-content" @click.stop>
+                <div class="modal-header">
+                    <h3>Analyze Log with GoAccess</h3>
+                    <button class="modal-close-btn" @click="logsManager.closeAnalyzeModal()">×</button>
+                </div>
+                <div class="modal-body">
+                    <div v-if="!logsManager.currentReportUrl.value">
+                        <div class="form-group">
+                            <label>Log Format (optional):</label>
+                            <input type="text" v-model="logsManager.goaccessOptions.value.log_format" class="form-input"
+                                placeholder="Leave empty for default NCSA format">
+                            <small class="form-help">Example: %h %^[%d:%^] "%r" %s %b "%R" "%u"</small>
+                        </div>
+                        <div class="form-group">
+                            <label>Date Format (optional):</label>
+                            <input type="text" v-model="logsManager.goaccessOptions.value.date_format"
+                                class="form-input" placeholder="Leave empty for default">
+                        </div>
+                        <div class="form-group">
+                            <label>Time Format (optional):</label>
+                            <input type="text" v-model="logsManager.goaccessOptions.value.time_format"
+                                class="form-input" placeholder="Leave empty for default">
+                        </div>
+                        <div v-if="logsManager.error.value" class="error-message">
+                            {{ logsManager.error.value }}
+                        </div>
+                    </div>
+                    <div v-else>
+                        <iframe :src="logsManager.currentReportUrl.value" class="report-iframe"></iframe>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn-secondary" @click="logsManager.closeAnalyzeModal()">
+                        {{ logsManager.currentReportUrl.value ? 'Close' : 'Cancel' }}
+                    </button>
+                    <button v-if="!logsManager.currentReportUrl.value" @click="logsManager.analyzeLog()"
+                        :disabled="logsManager.isLoading.value" class="btn-primary">
+                        <span v-if="logsManager.isLoading.value">Analyzing...</span>
+                        <span v-else>Analyze</span>
+                    </button>
+                    <a v-if="logsManager.currentReportUrl.value" :href="logsManager.currentReportUrl.value"
+                        target="_blank" class="btn-primary">
+                        Open in New Tab
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- 通用确认模态框 -->
+        <div v-if="confirmDialog.show" class="modal-overlay" @click="confirmDialog.cancel()">
+            <div class="modal-content" @click.stop>
+                <div class="modal-header">
+                    <h3>{{ confirmDialog.title }}</h3>
+                    <button class="modal-close-btn" @click="confirmDialog.cancel()">×</button>
+                </div>
+                <div class="modal-body">
+                    <p style="font-size:1.1rem; color:#c53030; font-weight:500;" v-html="confirmDialog.message"></p>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn-secondary" @click="confirmDialog.cancel()">{{ confirmDialog.cancelText
+                        }}</button>
+                    <button class="btn-primary" :style="confirmDialog.dangerStyle ? 'background:#e53e3e;' : ''"
+                        @click="confirmDialog.confirm()">{{ confirmDialog.confirmText }}</button>
+                </div>
+            </div>
+        </div>
+
+    </div> <!-- end of #app -->
+    <!-- JavaScript文件 -->
+    <script src="js/api.js"></script>
+    <script src="js/notification.js"></script>
+    <script src="js/status.js"></script>
+    <script src="js/upstreams.js"></script>
+    <script src="js/servers.js"></script>
+    <script src="js/logs.js"></script>
+    <script src="js/main.js"></script>
+</body>
+
+</html>

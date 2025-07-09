@@ -1,0 +1,271 @@
+### Server API 测试文件
+### 基于 RestyPanel 的 Server 管理 API
+
+@host = http://127.0.0.1:8765
+@api_base = {{host}}/asd1239axasd/api
+@content_type = application/json
+### ============= 认证 =============
+
+### 用户登录
+# @name login
+POST {{api_base}}/auth/login
+Content-Type: {{content_type}}
+
+{
+  "username": "RestyPanel",
+  "password": "RestyPanel"
+}
+
+### 提取 JWT Token
+@access_token = {{login.response.body.$.data.access_token}}
+
+### 1. 获取所有 server 配置
+GET {{api_base}}/servers
+Authorization: Bearer {{access_token}}
+Content-Type: application/json
+
+### 2. 新建的 example 配置 （现在保存为 backup 状态）
+POST {{api_base}}/servers/example
+Authorization: Bearer {{access_token}}
+Content-Type: text/plain
+
+server {
+    listen 80;
+    server_name example.com localhost 127.0.0.1 www.example.com;
+    
+    location /health {
+        return 200 "OK";
+        add_header Content-Type text/plain;
+    }
+}
+
+### 3. 获取指定 server 配置（应显示 backup 状态）
+GET {{api_base}}/servers/example
+Authorization: Bearer {{access_token}}
+
+### 4. 测试 server 配置（从 backup 状态移动到 disabled 状态）
+POST {{api_base}}/servers/example/action?action=test
+Authorization: Bearer {{access_token}}
+
+### 5. 启用 server 配置（从 disabled 状态移动到 enabled 状态）
+POST {{api_base}}/servers/example/action?action=enable
+Authorization: Bearer {{access_token}}
+
+### 6. 禁用 server 配置（从 enabled 状态移动到 disabled 状态）
+POST {{api_base}}/servers/example/action?action=disable
+Authorization: Bearer {{access_token}}
+
+### 7. 更新 example 配置 （现在保存为 backup 状态）
+PUT {{api_base}}/servers/example
+Authorization: Bearer {{access_token}}
+Content-Type: text/plain
+
+server {
+    listen 8003;
+    server_name example.com localhost 127.0.0.1 www.example.com;
+    
+    location /health {
+        return 200 "OK";
+        add_header Content-Type text/plain;
+    }
+}
+
+
+
+### 13. 创建无效的 server 配置（应保存为 backup 状态）
+POST {{api_base}}/servers/invalid_server
+Authorization: Bearer {{access_token}}
+Content-Type: text/plain
+
+server {
+    listen 80;
+    server_name invalid.example.com;
+    
+    location / {
+        # 这是一个无效的指令，应该导致测试失败
+        invalid_directive_here;
+    }
+}
+
+
+### 15. 检查无效配置状态（应该仍然是 backup）
+GET {{api_base}}/servers/invalid_server
+Authorization: Bearer {{access_token}}
+
+### 16. 错误测试 - 尝试启用 backup 状态的配置（应该失败）
+POST {{api_base}}/servers/invalid_server/action?action=enable
+Authorization: Bearer {{access_token}}
+
+### 17. 错误测试 - 尝试禁用 backup 状态的配置（应该失败）
+POST {{api_base}}/servers/invalid_server/action?action=disable
+Authorization: Bearer {{access_token}}
+
+### 18. 错误测试 - 使用无效的 action 参数
+POST {{api_base}}/servers/example/action?action=invalid_action
+Authorization: Bearer {{access_token}}
+
+### 19. 错误测试 - 缺少 action 参数
+POST {{api_base}}/servers/example/action
+Authorization: Bearer {{access_token}}
+
+### 20. 错误测试 - 操作不存在的 server
+POST {{api_base}}/servers/nonexistent_server/action?action=test
+Authorization: Bearer {{access_token}}
+
+### 21. 删除 server 配置
+DELETE {{api_base}}/servers/example
+Authorization: Bearer {{access_token}}
+
+### 22. 删除无效的 server 配置
+DELETE {{api_base}}/servers/invalid_server
+Authorization: Bearer {{access_token}}
+
+### 23. 最终验证 - 获取所有 server 配置
+GET {{api_base}}/servers
+Authorization: Bearer {{access_token}}
+
+###
+### 新的状态管理工作流程说明：
+### 1. 创建/更新配置 → backup 状态
+### 2. 测试配置 (action=test) → backup → disabled (成功) 或保持 backup (失败)
+### 3. 启用配置 (action=enable) → disabled → enabled
+### 4. 禁用配置 (action=disable) → enabled → disabled
+### 
+### 状态流转限制：
+### - test: 只能操作 backup 状态的文件
+### - enable: 只能操作 disabled 状态的文件
+### - disable: 只能操作 enabled 状态的文件
+###
+
+### 13. 禁用 SSL server 配置
+PUT {{api_base}}/servers/ssl_server
+Authorization: Bearer {{access_token}}
+Content-Type: text/plain
+
+DISABLE
+
+### 14. 启用 SSL server 配置
+PUT {{api_base}}/servers/ssl_server
+Authorization: Bearer {{access_token}}
+Content-Type: text/plain
+
+ENABLE
+
+### 15. 删除 SSL server 配置
+DELETE {{api_base}}/servers/ssl_server
+Authorization: Bearer {{access_token}}
+
+### 16. 删除负载均衡 server 配置
+DELETE {{api_base}}/servers/lb_server
+Authorization: Bearer {{access_token}}
+
+### 17. 再次获取所有 server 配置（验证删除）
+GET {{api_base}}/servers
+Authorization: Bearer {{access_token}}
+
+### 18. 错误测试 - 获取不存在的 server
+GET {{api_base}}/servers/nonexistent_server
+Authorization: Bearer {{access_token}}
+
+### 19. 错误测试 - 创建重复的 server
+POST {{api_base}}/servers?name=duplicate_server
+Authorization: Bearer {{access_token}}
+Content-Type: text/plain
+
+server {
+    listen 80;
+    server_name duplicate.example.com;
+    
+    location / {
+        return 200 "First server";
+    }
+}
+
+### 20. 错误测试 - 再次创建相同名称的 server（应该失败）
+POST {{api_base}}/servers?name=duplicate_server
+Authorization: Bearer {{access_token}}
+Content-Type: text/plain
+
+server {
+    listen 80;
+    server_name duplicate2.example.com;
+    
+    location / {
+        return 200 "Second server";
+    }
+}
+
+### 21. 错误测试 - 创建无效的 nginx 配置
+POST {{api_base}}/servers?name=invalid_server
+Authorization: Bearer {{access_token}}
+Content-Type: text/plain
+
+server {
+    listen 80;
+    server_name invalid.example.com;
+    
+    location / {
+        # 这是一个无效的指令，应该导致 nginx 测试失败
+        invalid_directive_here;
+    }
+}
+
+### 22. 检查无效配置的状态（应该是 failed）
+GET {{api_base}}/servers
+Authorization: Bearer {{access_token}}
+
+### 23. 尝试启用失败的配置（应该失败）
+PUT {{api_base}}/servers/invalid_server
+Authorization: Bearer {{access_token}}
+Content-Type: text/plain
+
+ENABLE
+
+### 24. 错误测试 - 更新不存在的 server
+PUT {{api_base}}/servers/nonexistent_server
+Authorization: Bearer {{access_token}}
+Content-Type: text/plain
+
+server {
+    listen 80;
+    server_name test.example.com;
+    
+    location / {
+        return 200 "Updated";
+    }
+}
+
+### 25. 错误测试 - 删除不存在的 server
+DELETE {{api_base}}/servers/nonexistent_server
+Authorization: Bearer {{access_token}}
+
+### 26. 错误测试 - 启用不存在的 server
+PUT {{api_base}}/servers/nonexistent_server
+Authorization: Bearer {{access_token}}
+Content-Type: text/plain
+
+ENABLE
+
+### 27. 错误测试 - 禁用不存在的 server
+PUT {{api_base}}/servers/nonexistent_server
+Authorization: Bearer {{access_token}}
+Content-Type: text/plain
+
+DISABLE
+
+### 28. 清理测试 - 删除重复的 server
+DELETE {{api_base}}/servers/duplicate_server
+Authorization: Bearer {{access_token}}
+
+### 29. 清理测试 - 删除无效的 server
+DELETE {{api_base}}/servers/invalid_server
+Authorization: Bearer {{access_token}}
+
+###
+### 使用说明：
+### 1. 将 {{host}} 替换为实际的服务器地址
+### 2. 将 {{access_token}} 替换为有效的 JWT token
+### 3. 按顺序执行测试用例
+### 4. 观察响应结果，验证 API 功能
+### 5. 错误测试用例用于验证错误处理机制
+### 

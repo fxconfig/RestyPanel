@@ -1,7 +1,7 @@
 # RestyPanel .gitignore
 
 # 日志文件
-*.log
+logs
 
 # 临时文件和缓存
 *.tmp

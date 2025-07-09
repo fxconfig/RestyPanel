@@ -9,4 +9,6 @@ FROM openresty/openresty:alpine
 
 # 从 Alpine 的软件源中安装 goaccess 及其所有依赖
 # RUN apk update && apk add --no-cache goaccess 
+RUN echo "https://mirrors.aliyun.com/alpine/v3.16/main" > /etc/apk/repositories
+RUN echo "https://mirrors.aliyun.com/alpine/v3.16/community" >> /etc/apk/repositories
 RUN apk add --no-cache goaccess 

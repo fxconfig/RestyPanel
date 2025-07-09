@@ -24,7 +24,7 @@ if not defined unstaged_changes (
 )
 
 rem 获取远程仓库的最新更改并合并
-git fetch github
+git fetch gitee
 if errorlevel 1 (
     echo Failed to fetch from gitee.
     exit
@@ -33,6 +33,12 @@ if errorlevel 1 (
 git merge
 if errorlevel 1 (
     echo Merge conflict detected. Please resolve conflicts and try again.
+    exit
+)
+
+git push gitee
+if errorlevel 1 (
+    echo Failed to push to gitee.
     exit
 )
 

@@ -75,7 +75,7 @@ flowchart TB
    - 禁用成功: `enabled` → `disabled` (停止生效并自动重载nginx)
    - 禁用失败: 回滚到 `enabled` 状态
 
-5. **更新操作**：只能对 `disabled` 状态的文件进行更新
+5. **更新操作**：可以对 `disabled` 和 `backup` 状态的文件进行更新
    - 更新操作会将配置保存为 `backup` 状态，等待测试
 
 #### 状态文件说明
@@ -84,7 +84,7 @@ flowchart TB
 |------|---------|------|----------|
 | enabled | `.conf` | 正常生效的配置 | disable |
 | disabled | `.conf.disabled` | 已禁用的配置 | enable, update |
-| backup | `.conf.backup` | 待测试的新配置 | test |
+| backup | `.conf.backup` | 待测试的新配置 | test, update |
 
 #### 状态文件管理
 

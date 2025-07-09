@@ -19,7 +19,7 @@ local REPORTS_DIR = config.get_configs().admin.paths.reports_dir or "/app/web/re
 -- Base directory for logs - get from config
 -- local LOGS_DIR = config.get_configs().admin.paths.logs_dir or "/var/log/nginx/"
 -- Directory for storing GoAccess reports - get from config
--- local REPORTS_DIR = config.get_configs().admin.paths.reports_dir or "/app/web/reports/"
+-- local REPORTS_DIR = config.get_configs().admin.paths.reports_dir or "/app/web/repor
 -- Make sure the reports directory exists with proper permissions
 os.execute("mkdir -p " .. REPORTS_DIR)
 os.execute("chmod -R 777 " .. REPORTS_DIR)
@@ -256,6 +256,10 @@ end
 function _M.delete_report(report_name)
     report_name = sanitize_filename(report_name)
     if not report_name then return false, "Invalid report name" end
+    
+    if string.sub(report_name, -5) ~= ".html" then
+        report_name = report_name .. ".html"
+    end
     
     local report_path = REPORTS_DIR .. report_name
     

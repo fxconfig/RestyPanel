@@ -31,3 +31,5 @@ app/configs/*.conf.backup
 
 # 依赖目录
 /node_modules/ 
+/app/configs/
+docker-compose.yml

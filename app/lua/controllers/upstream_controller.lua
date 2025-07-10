@@ -31,6 +31,29 @@ local function has_enabled_servers(upstream_config)
     return false
 end
 
+-- 工具函数：处理HTTP请求格式，确保换行符是\r\n
+local function normalize_http_req(http_req)
+    if not http_req or type(http_req) ~= "string" then
+        return http_req
+    end
+    
+    -- 将单独的\n替换为\r\n (排除已经是\r\n的情况)
+    return http_req:gsub("\r?\n", "\r\n")
+end
+
+-- 工具函数：处理upstream配置中的health_check
+local function process_health_check(config)
+    if not config or not config.health_check then
+        return config
+    end
+    
+    if config.health_check.http_req then
+        config.health_check.http_req = normalize_http_req(config.health_check.http_req)
+    end
+    
+    return config
+end
+
 -- 工具函数：读取配置
 local function load_config()
     local file = io.open(CONFIG_FILE, "r")
@@ -277,6 +300,9 @@ function _M.create(context)
     data.updated_at = ngx.time()
     data.created_by = context.user and context.user.id or "system"
     
+    -- 处理health_check中的http_req参数
+    data = process_health_check(data)
+    
     config.upstreams[upstream_name] = data
     
     local success, save_err = save_config(config)
@@ -342,6 +368,9 @@ function _M.update(context)
     data.created_by = existing.created_by
     data.updated_at = ngx.time()
     data.updated_by = context.user and context.user.id or "system"
+    
+    -- 处理health_check中的http_req参数
+    data = process_health_check(data)
     
     -- 检查服务器状态，如果没有启用的服务器则强制设置 enable 为 false
     if not has_enabled_servers(data) then

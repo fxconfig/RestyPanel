@@ -55,24 +55,45 @@ class UpstreamsManager {
         const statusMap = {};
         const noCheckersMap = {};
         let current = null;
+        let isPrimary = false;
+        let isBackup = false;
         
         text.split(/\r?\n/).forEach(line => {
             const trimmed = line.trim();
-            // 匹配 Upstream 行，检查是否包含 NO checkers
+            // 匹配 Upstream 行
             const upMatch = trimmed.match(/^Upstream\s+([^\s]+)(.*)$/i);
             if (upMatch) {
                 current = upMatch[1];
                 statusMap[current] = {};
                 // 检查是否包含 "NO checkers"
                 noCheckersMap[current] = upMatch[2].includes('NO checkers');
+                isPrimary = false;
+                isBackup = false;
                 return;
             }
+            
             if (!current) return;
             
-            // 匹配服务器地址和状态
-            const peerMatch = trimmed.match(/^(\d+\.\d+\.\d+\.\d+:\d+)\s+(\w+)/);
-            if (peerMatch) {
-                statusMap[current][peerMatch[1]] = peerMatch[2];
+            // 检查是否是Primary Peers或Backup Peers段落
+            if (trimmed === 'Primary Peers') {
+                isPrimary = true;
+                isBackup = false;
+                return;
+            } else if (trimmed === 'Backup Peers') {
+                isPrimary = false;
+                isBackup = true;
+                return;
+            }
+            
+            // 匹配服务器地址和状态 - 更精确的匹配
+            if (isPrimary || isBackup) {
+                const peerMatch = trimmed.match(/^(\d+\.\d+\.\d+\.\d+:\d+)\s+(\w+)/);
+                if (peerMatch) {
+                    // 添加到状态映射，设置服务器类型
+                    const address = peerMatch[1];
+                    const status = peerMatch[2];
+                    statusMap[current][address] = status;
+                }
             }
         });
         

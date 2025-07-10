@@ -182,24 +182,41 @@ class UpstreamsManager {
                 
                 // 查找状态中存在但配置中不存在的服务器
                 if (statusMap[upstream.name] && !noCheckersMap[upstream.name]) {
-                    const configuredAddresses = upstream.servers.map(s => s.address);
+                    const configuredAddresses = upstream.servers.filter(s => !s.isDynamic).map(s => s.address);
                     const statusAddresses = Object.keys(statusMap[upstream.name]);
                     
                     // 找出状态中有但配置中没有的服务器地址
                     const dynamicServers = statusAddresses.filter(addr => !configuredAddresses.includes(addr));
                     
-                    // 清除之前的动态服务器（如果有的话）
-                    upstream.servers = upstream.servers.filter(s => !s.isDynamic);
+                    // 先移除已不存在于状态中的动态服务器
+                    const currentDynamicServers = upstream.servers.filter(s => s.isDynamic);
+                    const toRemove = [];
                     
-                    // 添加动态服务器到列表末尾
+                    currentDynamicServers.forEach(server => {
+                        if (!statusAddresses.includes(server.address)) {
+                            toRemove.push(server.address);
+                        }
+                    });
+                    
+                    // 移除不再出现在状态中的动态服务器
+                    if (toRemove.length > 0) {
+                        upstream.servers = upstream.servers.filter(s => !s.isDynamic || !toRemove.includes(s.address));
+                    }
+                    
+                    // 添加新的动态服务器
+                    const existingDynamicAddresses = upstream.servers.filter(s => s.isDynamic).map(s => s.address);
+                    
                     dynamicServers.forEach(address => {
-                        upstream.servers.push({
-                            address,
-                            isDynamic: true, // 标记为动态/不可编辑
-                            status: statusMap[upstream.name][address],
-                            enable: true,
-                            isToggling: false
-                        });
+                        // 只添加尚未存在的动态服务器
+                        if (!existingDynamicAddresses.includes(address)) {
+                            upstream.servers.push({
+                                address,
+                                isDynamic: true, // 标记为动态/不可编辑
+                                status: statusMap[upstream.name][address],
+                                enable: true,
+                                isToggling: false
+                            });
+                        }
                     });
                 }
                 

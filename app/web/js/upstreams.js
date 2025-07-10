@@ -946,6 +946,16 @@ class UpstreamsManager {
             return;
         }
 
+        // Initialize rawConfig if it doesn't exist
+        if (!upstream.rawConfig) {
+            upstream.rawConfig = { name: upstreamName };
+        }
+
+        // Initialize servers array if it doesn't exist
+        if (!upstream.rawConfig.servers) {
+            upstream.rawConfig.servers = [];
+        }
+
         const serverExists = upstream.rawConfig.servers.some(s => {
             const serverAddress = (typeof s === 'string') ? s : s.server;
             return serverAddress === form.address.trim();
@@ -962,7 +972,7 @@ class UpstreamsManager {
         if (form.weight && parseInt(form.weight, 10) > 0) {
             newServer.weight = parseInt(form.weight, 10);
         }
-
+        
         upstream.rawConfig.servers.push(newServer);
 
         this.isSaving.value = true;

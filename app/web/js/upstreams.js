@@ -126,6 +126,12 @@ class UpstreamsManager {
                     isToggling: false // 前端状态
                 };
             });
+            
+            // 按照名称字母顺序排序
+            upstreams.sort((a, b) => {
+                return a.name.localeCompare(b.name);
+            });
+            
             this.data.value = upstreams;
             localStorage.setItem('RestyPanel_upstreamsData', JSON.stringify(upstreams));
         } catch (err) {

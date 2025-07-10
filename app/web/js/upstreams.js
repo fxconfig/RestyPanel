@@ -956,10 +956,20 @@ class UpstreamsManager {
             upstream.rawConfig.servers = [];
         }
 
-        const serverExists = upstream.rawConfig.servers.some(s => {
-            const serverAddress = (typeof s === 'string') ? s : s.server;
-            return serverAddress === form.address.trim();
-        });
+        // Extra safety checks for server entries
+        let serverExists = false;
+        try {
+            serverExists = Array.isArray(upstream.rawConfig.servers) && 
+                upstream.rawConfig.servers.some(s => {
+                    if (!s) return false; // Skip null/undefined entries
+                    const serverAddress = (typeof s === 'string') ? s : (s.server || '');
+                    return serverAddress === form.address.trim();
+                });
+        } catch (err) {
+            console.error('Error checking for existing servers:', err);
+            // Initialize as empty array if there was an error
+            upstream.rawConfig.servers = [];
+        }
 
         if (serverExists) {
             this.addServerError.value = 'Server with this address already exists in the upstream.';

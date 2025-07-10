@@ -343,31 +343,29 @@ const ServersManager = (function() {
      * 确认删除服务器
      */
     function confirmDeleteServer(serverName) {
-        deleteTarget.value = serverName;
-        showDeleteModal.value = true;
-    }
-
-    /**
-     * 关闭删除模态框
-     */
-    function closeDeleteModal() {
-        showDeleteModal.value = false;
-        deleteTarget.value = '';
+        NotificationManager.confirm({
+            title: '删除服务器',
+            message: `确定要删除服务器配置 <b>${serverName}</b> 吗？<br>此操作无法撤销。`,
+            confirmText: '删除',
+            cancelText: '取消',
+            dangerStyle: true,
+            onConfirm: () => deleteServer(serverName)
+        });
     }
 
     /**
      * 删除服务器
      */
-    async function deleteServer() {
-        if (!deleteTarget.value) return;
+    async function deleteServer(serverNameToDelete) {
+        const serverName = serverNameToDelete || deleteTarget.value;
+        if (!serverName) return;
         
         try {
             isLoading.value = true;
-            const response = await api.delete(`/servers/${deleteTarget.value}`);
+            const response = await api.delete(`/servers/${serverName}`);
             
             if (response && response.data && response.data.code === 200) {
                 NotificationManager.show('success', response.data.message || 'Server configuration deleted successfully');
-                closeDeleteModal();
                 refreshServerList();
             } else if (response) {
                 console.error('API error when deleting server:', response);
@@ -568,7 +566,6 @@ const ServersManager = (function() {
         summary,
         showEditModal,
         showViewModal,
-        showDeleteModal,
         isEditing,
         editError,
         deleteTarget,
@@ -591,7 +588,6 @@ const ServersManager = (function() {
         viewServer,
         closeViewModal,
         confirmDeleteServer,
-        closeDeleteModal,
         deleteServer,
         testServer,
         enableServer,

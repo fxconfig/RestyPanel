@@ -339,8 +339,6 @@ const app = createApp({
                     serversManager.closeEditModal();
                 } else if (serversManager.showViewModal.value) {
                     serversManager.closeViewModal();
-                } else if (serversManager.showDeleteModal.value) {
-                    serversManager.closeDeleteModal();
                 } else if (logsManager.showReportModal.value) {
                     logsManager.closeReportModal();
                 } else if (logsManager.showDeleteAllConfirmModal.value) {

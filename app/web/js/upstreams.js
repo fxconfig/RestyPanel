@@ -159,6 +159,29 @@ class UpstreamsManager {
                 // 更新upstream的checker状态（前端状态）
                 upstream.hasCheckers = !noCheckersMap[upstream.name];
                 
+                // 查找状态中存在但配置中不存在的服务器
+                if (statusMap[upstream.name] && !noCheckersMap[upstream.name]) {
+                    const configuredAddresses = upstream.servers.map(s => s.address);
+                    const statusAddresses = Object.keys(statusMap[upstream.name]);
+                    
+                    // 找出状态中有但配置中没有的服务器地址
+                    const dynamicServers = statusAddresses.filter(addr => !configuredAddresses.includes(addr));
+                    
+                    // 清除之前的动态服务器（如果有的话）
+                    upstream.servers = upstream.servers.filter(s => !s.isDynamic);
+                    
+                    // 添加动态服务器到列表末尾
+                    dynamicServers.forEach(address => {
+                        upstream.servers.push({
+                            address,
+                            isDynamic: true, // 标记为动态/不可编辑
+                            status: statusMap[upstream.name][address],
+                            enable: true,
+                            isToggling: false
+                        });
+                    });
+                }
+                
                 // 更新每个server的状态（前端状态）
                 upstream.servers.forEach(server => {
                     if (noCheckersMap[upstream.name]) {

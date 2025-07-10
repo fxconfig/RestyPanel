@@ -384,9 +384,11 @@
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    <tr v-for="srv in up.servers" :key="srv.address">
-                                        <td>{{ srv.address }}</td>
-                                        <td>{{ srv.weight ?? '--' }}</td>
+                                    <tr v-for="srv in up.servers" :key="srv.address" :class="{'dynamic-server': srv.isDynamic}">
+                                        <td>{{ srv.address }} <span v-if="srv.isDynamic" class="dynamic-label"
+                                                title="Dynamic server detected by health check but not in configuration">(dynamic)</span></td>
+                                        <td v-if="!srv.isDynamic">{{ srv.weight ?? '--' }}</td>
+                                        <td v-else>--</td>
                                         <td>
                                             <span :class="['status-badge', 
                                                 srv.status === 'UP' ? 'up' : 
@@ -395,21 +397,23 @@
                                                 {{ srv.status }}
                                             </span>
                                         </td>
-                                        <td>
+                                        <td v-if="!srv.isDynamic">
                                             <label class="toggle-switch"
-                                                :title="srv.enable ? 'Disable server' : 'Enable server'">
+                                                title="Enable/disable server">
                                                 <input type="checkbox" :checked="srv.enable"
                                                     @change="upstreamsManager.toggleServer(up.name, srv.address, $event.target.checked)"
                                                     :disabled="srv.isToggling">
                                                 <span class="toggle-slider"></span>
                                             </label>
                                         </td>
-                                        <td>
+                                        <td v-else>--</td>
+                                        <td v-if="!srv.isDynamic">
                                             <button class="delete-server-btn"
                                                 @click="upstreamsManager.confirmDeleteServer(up.name, srv.address)">
                                                 ×
                                             </button>
                                         </td>
+                                        <td v-else>--</td>
                                     </tr>
                                 </tbody>
                             </table>

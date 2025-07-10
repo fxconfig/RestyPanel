@@ -2825,3 +2825,21 @@ body {
     height: 500px;
     border: none;
 }
+
+/* Dynamic server styles */
+.dynamic-server {
+    background-color: rgba(241, 245, 249, 0.7);
+    font-style: italic;
+}
+
+.dynamic-label {
+    font-size: 0.8rem;
+    color: #64748b;
+    font-style: italic;
+    background-color: #e2e8f0;
+    border-radius: 4px;
+    padding: 1px 5px;
+    margin-left: 5px;
+    display: inline-block;
+    font-weight: normal;
+}

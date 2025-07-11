@@ -2,13 +2,16 @@
 
 class UpstreamsManager {
     constructor() {
+        // 基础数据
         const savedData = localStorage.getItem('RestyPanel_upstreamsData');
         this.data = Vue.ref(savedData ? JSON.parse(savedData) : []);
         this.isLoading = Vue.ref(false);
-        this.statusRefreshTimer = Vue.ref(null);
-        this.autoRefresh = Vue.ref(false);
-        this.refreshInterval = Vue.ref(3);
         this.lastUpdateTime = Vue.ref(null);
+
+        // 刷新相关
+        this.statusRefreshTimer = Vue.ref(null);
+        this.autoRefresh = Vue.ref(true);
+        this.refreshInterval = Vue.ref(3);
         
         // 编辑模态框相关
         this.showEditModal = Vue.ref(false);
@@ -16,11 +19,13 @@ class UpstreamsManager {
         this.editingConfigText = Vue.ref('');
         this.editError = Vue.ref('');
         this.isSaving = Vue.ref(false);
+
         // 展示 upstream.conf 相关
         this.showConfModal = Vue.ref(false);
         this.upstreamConfContent = Vue.ref('');
         this.confError = Vue.ref('');
         this.confViewerInstance = null;
+
         // 健康检查模态框相关
         this.showHealthCheckerModal = Vue.ref(false);
         this.healthCheckerForm = Vue.reactive({
@@ -48,6 +53,25 @@ class UpstreamsManager {
 
         // Delete Server confirmation modal
         this.showDeleteServerModal = Vue.ref(false);
+
+        // 绑定方法上下文
+        this.parseUpstreamStatus = this.parseUpstreamStatus.bind(this);
+        this.updateUpstreamStatus = this.updateUpstreamStatus.bind(this);
+    }
+
+    // 初始化
+    init() {
+        console.log('Initializing upstreams manager...');
+        // 加载upstream数据
+        this.fetchUpstreams().then(() => {
+            // 加载完成后更新状态
+            this.updateUpstreamStatus();
+
+            // 如果开启了自动刷新，启动定时刷新
+            if (this.autoRefresh.value) {
+                this.startStatusRefresh();
+            }
+        });
     }
     
     // 解析 /upstream/status 文本
@@ -111,60 +135,71 @@ class UpstreamsManager {
                 const rawConfig = { ...u };
                 
                 // 前端显示用的服务器列表（不修改原始数据）
-                const displayServers = (u.servers || []).map(s => {
-                    let address = '';
-                    let weight;
-                    let enable = true; // 默认启用
-                    
-                    if (typeof s === 'string') {
-                        address = s;
-                    } else {
-                        if (s.server) address = s.server;
-                        else if (s.host) address = s.port ? `${s.host}:${s.port}` : s.host;
-                        else if (s.address) address = s.address;
-                        weight = s.weight;
-                        enable = s.enable !== false; // 明确检查 enable 字段，默认为 true
-                    }
-                    
-                    return { 
-                        address, 
-                        weight, 
-                        status: 'UNKNOWN', // 前端状态
-                        enable, // 从原始数据获取
-                        isToggling: false // 前端状态
-                    };
-                });
-                
-                return { 
+                const displayServers = this.parseServersFromConfig(u.servers || []);
+
+                return {
                     // 原始配置数据（不修改）
                     rawConfig: rawConfig,
-                    
+
                     // 前端显示数据
-                    name: u.name, 
+                    name: u.name,
                     servers: displayServers,
                     enable: u.enable !== false, // 从原始数据获取
                     hasCheckers: true, // 前端状态
                     isToggling: false // 前端状态
                 };
             });
-            
+
             // 按照名称字母顺序排序
-            upstreams.sort((a, b) => {
-                return a.name.localeCompare(b.name);
-            });
-            
+            upstreams.sort((a, b) => a.name.localeCompare(b.name));
+
             this.data.value = upstreams;
-            localStorage.setItem('RestyPanel_upstreamsData', JSON.stringify(upstreams));
+            this.saveDataToStorage();
+
+            return upstreams;
         } catch (err) {
             console.error('Error fetching upstreams:', err);
+            throw err;
         } finally {
             this.isLoading.value = false;
         }
     }
+
+    // 解析服务器配置
+    parseServersFromConfig(servers) {
+        return (servers || []).map(s => {
+            let address = '';
+            let weight;
+            let enable = true; // 默认启用
+
+            if (typeof s === 'string') {
+                address = s;
+            } else {
+                if (s.server) address = s.server;
+                else if (s.host) address = s.port ? `${s.host}:${s.port}` : s.host;
+                else if (s.address) address = s.address;
+                weight = s.weight;
+                enable = s.enable !== false; // 明确检查 enable 字段，默认为 true
+            }
+
+            return {
+                address,
+                weight,
+                status: 'UNKNOWN', // 前端状态
+                enable, // 从原始数据获取
+                isToggling: false // 前端状态
+            };
+        });
+    }
+
+    // 保存数据到本地存储
+    saveDataToStorage() {
+        localStorage.setItem('RestyPanel_upstreamsData', JSON.stringify(this.data.value));
+    }
     
     // 手动刷新
     refreshUpstreams() {
-        this.fetchUpstreams();
+        return this.fetchUpstreams().then(() => this.updateUpstreamStatus());
     }
     
     // 更新upstream状态（根据upstream/status接口）
@@ -182,44 +217,9 @@ class UpstreamsManager {
                 
                 // 查找状态中存在但配置中不存在的服务器
                 if (statusMap[upstream.name] && !noCheckersMap[upstream.name]) {
-                    const configuredAddresses = upstream.servers.filter(s => !s.isDynamic).map(s => s.address);
-                    const statusAddresses = Object.keys(statusMap[upstream.name]);
-                    
-                    // 找出状态中有但配置中没有的服务器地址
-                    const dynamicServers = statusAddresses.filter(addr => !configuredAddresses.includes(addr));
-                    
-                    // 先移除已不存在于状态中的动态服务器
-                    const currentDynamicServers = upstream.servers.filter(s => s.isDynamic);
-                    const toRemove = [];
-                    
-                    currentDynamicServers.forEach(server => {
-                        if (!statusAddresses.includes(server.address)) {
-                            toRemove.push(server.address);
-                        }
-                    });
-                    
-                    // 移除不再出现在状态中的动态服务器
-                    if (toRemove.length > 0) {
-                        upstream.servers = upstream.servers.filter(s => !s.isDynamic || !toRemove.includes(s.address));
-                    }
-                    
-                    // 添加新的动态服务器
-                    const existingDynamicAddresses = upstream.servers.filter(s => s.isDynamic).map(s => s.address);
-                    
-                    dynamicServers.forEach(address => {
-                        // 只添加尚未存在的动态服务器
-                        if (!existingDynamicAddresses.includes(address)) {
-                            upstream.servers.push({
-                                address,
-                                isDynamic: true, // 标记为动态/不可编辑
-                                status: statusMap[upstream.name][address],
-                                enable: true,
-                                isToggling: false
-                            });
-                        }
-                    });
+                    this.updateDynamicServers(upstream, statusMap);
                 }
-                
+
                 // 更新每个server的状态（前端状态）
                 upstream.servers.forEach(server => {
                     if (noCheckersMap[upstream.name]) {
@@ -229,19 +229,65 @@ class UpstreamsManager {
                     }
                 });
             });
-            
+
             // 记录最后更新时间
             this.lastUpdateTime.value = new Date();
+
+            return this.data.value;
         } catch (err) {
             console.error('Error updating upstream status:', err);
+            throw err;
         }
     }
+
+    // 更新动态服务器
+    updateDynamicServers(upstream, statusMap) {
+        const configuredAddresses = upstream.servers.filter(s => !s.isDynamic).map(s => s.address);
+        const statusAddresses = Object.keys(statusMap[upstream.name]);
+
+        // 找出状态中有但配置中没有的服务器地址
+        const dynamicServers = statusAddresses.filter(addr => !configuredAddresses.includes(addr));
+
+        // 先移除已不存在于状态中的动态服务器
+        const currentDynamicServers = upstream.servers.filter(s => s.isDynamic);
+        const toRemove = [];
+
+        currentDynamicServers.forEach(server => {
+            if (!statusAddresses.includes(server.address)) {
+                toRemove.push(server.address);
+            }
+        });
+
+        // 移除不再出现在状态中的动态服务器
+        if (toRemove.length > 0) {
+            upstream.servers = upstream.servers.filter(s => !s.isDynamic || !toRemove.includes(s.address));
+        }
+
+        // 添加新的动态服务器
+        const existingDynamicAddresses = upstream.servers.filter(s => s.isDynamic).map(s => s.address);
+
+        dynamicServers.forEach(address => {
+            // 只添加尚未存在的动态服务器
+            if (!existingDynamicAddresses.includes(address)) {
+                upstream.servers.push({
+                    address,
+                    isDynamic: true, // 标记为动态/不可编辑
+                    status: statusMap[upstream.name][address],
+                    enable: true,
+                    isToggling: false
+                });
+            }
+        });
+    }
+
+    // 自动刷新相关方法
     
     // 停止定时刷新
     stopStatusRefresh() {
         if (this.statusRefreshTimer.value) {
             clearInterval(this.statusRefreshTimer.value);
             this.statusRefreshTimer.value = null;
+            console.log('Upstream status Auto refresh stopped');
         }
     }
     
@@ -264,24 +310,23 @@ class UpstreamsManager {
     
     // 定时刷新 upstream status
     startStatusRefresh() {
-        if (this.statusRefreshTimer.value) {
-            clearInterval(this.statusRefreshTimer.value);
-        }
-        this.statusRefreshTimer.value = setInterval(async () => {
-            await this.updateUpstreamStatus();
+        this.stopStatusRefresh();
+
+        this.statusRefreshTimer.value = setInterval(() => {
+            this.updateUpstreamStatus();
         }, this.refreshInterval.value * 1000); // 使用设置的间隔
     }
     
     // 切换 upstream 启用状态（只修改enable字段）
     async toggleUpstream(upstreamName, enabled) {
+        const upstream = this.data.value.find(u => u.name === upstreamName);
+        if (!upstream) return;
+
         try {
-            // 找到对应的upstream并设置loading状态
-            const upstream = this.data.value.find(u => u.name === upstreamName);
-            if (!upstream) return;
-            
+        // 设置loading状态
             upstream.isToggling = true;
             
-            // 直接修改 rawConfig
+            // 修改配置
             upstream.rawConfig.enable = enabled;
             
             // 调用API更新upstream
@@ -289,37 +334,9 @@ class UpstreamsManager {
             
             // 使用返回的数据更新界面
             const returnedConfig = resp.data;
-            // 更新 rawConfig
-            upstream.rawConfig = { ...returnedConfig };
-            // 更新前端显示数据
-            upstream.enable = returnedConfig.enable !== false;
-            // 更新服务器列表
-            upstream.servers = (returnedConfig.servers || []).map(s => {
-                let address = '';
-                let weight;
-                let enable = true;
-                
-                if (typeof s === 'string') {
-                    address = s;
-                } else {
-                    if (s.server) address = s.server;
-                    else if (s.host) address = s.port ? `${s.host}:${s.port}` : s.host;
-                    else if (s.address) address = s.address;
-                    weight = s.weight;
-                    enable = s.enable !== false;
-                }
-                
-                return { 
-                    address, 
-                    weight, 
-                    status: 'UNKNOWN',
-                    enable,
-                    isToggling: false
-                };
-            });
-            
-            // 保存到 localStorage
-            localStorage.setItem('RestyPanel_upstreamsData', JSON.stringify(this.data.value));
+
+            // 更新配置和UI
+            this.updateUpstreamFromConfig(upstream, returnedConfig);
             
             // 重新拉取状态
             await this.updateUpstreamStatus();
@@ -329,7 +346,6 @@ class UpstreamsManager {
                 const actualEnabled = returnedConfig.enable !== false;
                 window.showNotification('success', `Upstream "${upstreamName}" ${actualEnabled ? 'enabled' : 'disabled'} successfully`);
             }
-            
         } catch (err) {
             console.error('Error toggling upstream:', err);
             // 显示错误通知
@@ -338,55 +354,24 @@ class UpstreamsManager {
             }
         } finally {
             // 清除loading状态
-            const upstream = this.data.value.find(u => u.name === upstreamName);
-            if (upstream) {
-                upstream.isToggling = false;
-            }
+            upstream.isToggling = false;
         }
     }
     
     // 切换 server 启用状态（只修改对应server的enable字段）
     async toggleServer(upstreamName, serverAddress, enabled) {
+        // 找到对应的upstream和server
+        const upstream = this.data.value.find(u => u.name === upstreamName);
+        if (!upstream) return;
+
+        const server = upstream.servers.find(s => s.address === serverAddress);
+        if (!server) return;
+
         try {
-            // 找到对应的upstream和server
-            const upstream = this.data.value.find(u => u.name === upstreamName);
-            if (!upstream) return;
-            
-            const server = upstream.servers.find(s => s.address === serverAddress);
-            if (!server) return;
-            
             server.isToggling = true;
             
-            // 直接修改 rawConfig 中对应 server 的 enable 字段
-            if (upstream.rawConfig.servers) {
-                for (let i = 0; i < upstream.rawConfig.servers.length; i++) {
-                    const s = upstream.rawConfig.servers[i];
-                    let isTargetServer = false;
-                    
-                    if (typeof s === 'string' && s === serverAddress) {
-                        isTargetServer = true;
-                    } else if (s.server && s.server === serverAddress) {
-                        isTargetServer = true;
-                    } else if (s.host && s.port && `${s.host}:${s.port}` === serverAddress) {
-                        isTargetServer = true;
-                    } else if (s.host && !s.port && s.host === serverAddress) {
-                        isTargetServer = true;
-                    } else if (s.address && s.address === serverAddress) {
-                        isTargetServer = true;
-                    }
-                    
-                    if (isTargetServer) {
-                        if (typeof s === 'string') {
-                            // 如果是字符串，转换为对象
-                            upstream.rawConfig.servers[i] = { server: s, enable: enabled };
-                        } else {
-                            // 如果是对象，直接修改 enable 字段
-                            upstream.rawConfig.servers[i].enable = enabled;
-                        }
-                        break;
-                    }
-                }
-            }
+            // 修改原始配置中的服务器enable状态
+            this.updateServerInRawConfig(upstream, serverAddress, enabled);
             
             // 调用API更新upstream
             const resp = await ApiService.upstreams.update(upstreamName, upstream.rawConfig);
@@ -398,41 +383,8 @@ class UpstreamsManager {
                 return;
             }
             
-            // 使用返回的数据更新界面
-            const returnedConfig = resp.data;
-            if (returnedConfig) {
-                // 更新 rawConfig
-                upstream.rawConfig = { ...returnedConfig };
-                // 更新前端显示数据
-                upstream.enable = returnedConfig.enable !== false;
-                // 更新服务器列表
-                upstream.servers = (returnedConfig.servers || []).map(s => {
-                    let address = '';
-                    let weight;
-                    let enable = true;
-                    
-                    if (typeof s === 'string') {
-                        address = s;
-                    } else {
-                        if (s.server) address = s.server;
-                        else if (s.host) address = s.port ? `${s.host}:${s.port}` : s.host;
-                        else if (s.address) address = s.address;
-                        weight = s.weight;
-                        enable = s.enable !== false;
-                    }
-                    
-                    return { 
-                        address, 
-                        weight, 
-                        status: 'UNKNOWN',
-                        enable,
-                        isToggling: false
-                    };
-                });
-                
-                // 保存到 localStorage
-                localStorage.setItem('RestyPanel_upstreamsData', JSON.stringify(this.data.value));
-            }
+            // 更新配置和UI
+            this.updateUpstreamFromConfig(upstream, resp.data);
             
             // 重新拉取状态
             await this.updateUpstreamStatus();
@@ -441,7 +393,6 @@ class UpstreamsManager {
             if (window.showNotification) {
                 window.showNotification('success', `Server "${serverAddress}" ${enabled ? 'enabled' : 'disabled'} successfully`);
             }
-            
         } catch (err) {
             console.error('Error toggling server:', err);
             // 显示错误通知
@@ -450,121 +401,74 @@ class UpstreamsManager {
             }
         } finally {
             // 清除loading状态
-            const upstream = this.data.value.find(u => u.name === upstreamName);
-            if (upstream) {
-                const server = upstream.servers.find(s => s.address === serverAddress);
-                if (server) {
-                    server.isToggling = false;
-                }
+            const server = upstream.servers.find(s => s.address === serverAddress);
+            if (server) {
+                server.isToggling = false;
             }
         }
     }
     
-    // 添加服务器到upstream
-    async addServerToUpstream(upstreamName) {
-        try {
-            // 弹出简单的对话框让用户输入服务器地址和权重
-            const serverAddress = prompt("Enter server address (e.g. 192.168.1.1:8080):");
-            if (!serverAddress) return; // 用户取消输入
+    // 更新原始配置中的服务器enable状态
+    updateServerInRawConfig(upstream, serverAddress, enabled) {
+        if (!upstream.rawConfig.servers) return;
+
+        for (let i = 0; i < upstream.rawConfig.servers.length; i++) {
+            const s = upstream.rawConfig.servers[i];
+            let isTargetServer = false;
             
-            // 权重是可选的
-            const weightStr = prompt("Enter server weight (optional, leave empty for default):");
-            const weight = weightStr && !isNaN(weightStr) ? parseInt(weightStr) : undefined;
+            if (typeof s === 'string' && s === serverAddress) {
+                isTargetServer = true;
+            } else if (s.server && s.server === serverAddress) {
+                isTargetServer = true;
+            } else if (s.host && s.port && `${s.host}:${s.port}` === serverAddress) {
+                isTargetServer = true;
+            } else if (s.host && !s.port && s.host === serverAddress) {
+                isTargetServer = true;
+            } else if (s.address && s.address === serverAddress) {
+                isTargetServer = true;
+            }
             
-            // 找到对应的upstream
-            const upstream = this.data.value.find(u => u.name === upstreamName);
-            if (!upstream) {
-                if (window.showNotification) {
-                    window.showNotification('error', `Upstream "${upstreamName}" not found`);
+            if (isTargetServer) {
+                if (typeof s === 'string') {
+                    // 如果是字符串，转换为对象
+                    upstream.rawConfig.servers[i] = { server: s, enable: enabled };
+                } else {
+                    // 如果是对象，直接修改 enable 字段
+                    upstream.rawConfig.servers[i].enable = enabled;
                 }
-                return;
-            }
-            
-            // 检查是否已存在相同地址的服务器
-            const existingServer = upstream.servers.find(s => s.address === serverAddress);
-            if (existingServer) {
-                if (window.showNotification) {
-                    window.showNotification('error', `Server with address "${serverAddress}" already exists in this upstream`);
-                }
-                return;
-            }
-            
-            // 创建新的服务器对象
-            const newServer = weight ? { server: serverAddress, weight } : { server: serverAddress };
-            
-            // 添加到rawConfig
-            if (!upstream.rawConfig.servers) {
-                upstream.rawConfig.servers = [];
-            }
-            upstream.rawConfig.servers.push(newServer);
-            
-            // 调用API更新upstream
-            const resp = await ApiService.upstreams.update(upstreamName, upstream.rawConfig);
-            if (!resp || resp.code !== 200) {
-                if (window.showNotification) {
-                    window.showNotification('error', resp?.message || 'Failed to add server to upstream');
-                }
-                return;
-            }
-            
-            // 使用返回的数据更新界面
-            const returnedConfig = resp.data;
-            if (returnedConfig) {
-                // 更新 rawConfig
-                upstream.rawConfig = { ...returnedConfig };
-                // 更新前端显示数据
-                upstream.enable = returnedConfig.enable !== false;
-                // 更新服务器列表
-                upstream.servers = (returnedConfig.servers || []).map(s => {
-                    let address = '';
-                    let weight;
-                    let enable = true;
-                    
-                    if (typeof s === 'string') {
-                        address = s;
-                    } else {
-                        if (s.server) address = s.server;
-                        else if (s.host) address = s.port ? `${s.host}:${s.port}` : s.host;
-                        else if (s.address) address = s.address;
-                        weight = s.weight;
-                        enable = s.enable !== false;
-                    }
-                    
-                    return { 
-                        address, 
-                        weight, 
-                        status: 'UNKNOWN',
-                        enable,
-                        isToggling: false
-                    };
-                });
-                
-                // 保存到 localStorage
-                localStorage.setItem('RestyPanel_upstreamsData', JSON.stringify(this.data.value));
-            }
-            
-            // 重新拉取状态
-            await this.updateUpstreamStatus();
-            
-            // 显示成功通知
-            if (window.showNotification) {
-                window.showNotification('success', `Server "${serverAddress}" added to upstream "${upstreamName}" successfully`);
-            }
-            
-        } catch (err) {
-            console.error('Error adding server to upstream:', err);
-            if (window.showNotification) {
-                window.showNotification('error', err?.message || 'Failed to add server to upstream');
+                break;
             }
         }
     }
-    
-    // 从upstream删除服务器
-    async deleteServerFromUpstream(upstreamName, serverAddress) {
-        // This function is now replaced by the modal flow
-        // The core logic has been moved to doDeleteServer()
-        // We can leave this empty or remove it. For safety, let's point it to the new flow.
-        this.confirmDeleteServer(upstreamName, serverAddress);
+
+    // 从配置更新upstream数据
+    updateUpstreamFromConfig(upstream, config) {
+        if (!config) return;
+
+        // 更新 rawConfig
+        upstream.rawConfig = { ...config };
+        // 更新前端显示数据
+        upstream.enable = config.enable !== false;
+        // 更新服务器列表
+        upstream.servers = this.parseServersFromConfig(config.servers);
+
+        // 保存到 localStorage
+        this.saveDataToStorage();
+    }
+
+    // ESC键处理
+    handleEscKey() {
+        if (this.showEditModal.value) {
+            this.closeEditModal();
+        } else if (this.showDeleteServerModal.value) {
+            this.closeDeleteServerModal();
+        } else if (this.showConfModal.value) {
+            this.closeShowConfModal();
+        } else if (this.showHealthCheckerModal.value) {
+            this.closeHealthCheckerModal();
+        } else if (this.showAddServerModal.value) {
+            this.closeAddServerModal();
+        }
     }
     
     // 清理资源
@@ -573,6 +477,10 @@ class UpstreamsManager {
         this.data.value = [];
         localStorage.removeItem('RestyPanel_upstreamsData');
         this.closeEditModal();
+        this.closeShowConfModal();
+        this.closeHealthCheckerModal();
+        this.closeAddServerModal();
+        this.closeDropdowns();
     }
     
     // 打开编辑模态框
@@ -663,34 +571,7 @@ class UpstreamsManager {
                     // 编辑模式：更新现有的 upstream
                     const existingIndex = this.data.value.findIndex(u => u.name === this.editingUpstream.value.name);
                     if (existingIndex !== -1) {
-                        // 更新 rawConfig
-                        this.data.value[existingIndex].rawConfig = { ...returnedConfig };
-                        // 更新前端显示数据
-                        this.data.value[existingIndex].enable = returnedConfig.enable !== false;
-                        // 更新服务器列表
-                        this.data.value[existingIndex].servers = (returnedConfig.servers || []).map(s => {
-                            let address = '';
-                            let weight;
-                            let enable = true;
-                            
-                            if (typeof s === 'string') {
-                                address = s;
-                            } else {
-                                if (s.server) address = s.server;
-                                else if (s.host) address = s.port ? `${s.host}:${s.port}` : s.host;
-                                else if (s.address) address = s.address;
-                                weight = s.weight;
-                                enable = s.enable !== false;
-                            }
-                            
-                            return { 
-                                address, 
-                                weight, 
-                                status: 'UNKNOWN',
-                                enable,
-                                isToggling: false
-                            };
-                        });
+                        this.updateUpstreamFromConfig(this.data.value[existingIndex], returnedConfig);
                     }
                 } else {
                     // 添加模式：添加新的 upstream
@@ -698,37 +579,13 @@ class UpstreamsManager {
                         rawConfig: { ...returnedConfig },
                         name: returnedConfig.name,
                         enable: returnedConfig.enable !== false,
-                        servers: (returnedConfig.servers || []).map(s => {
-                            let address = '';
-                            let weight;
-                            let enable = true;
-                            
-                            if (typeof s === 'string') {
-                                address = s;
-                            } else {
-                                if (s.server) address = s.server;
-                                else if (s.host) address = s.port ? `${s.host}:${s.port}` : s.host;
-                                else if (s.address) address = s.address;
-                                weight = s.weight;
-                                enable = s.enable !== false;
-                            }
-                            
-                            return { 
-                                address, 
-                                weight, 
-                                status: 'UNKNOWN',
-                                enable,
-                                isToggling: false
-                            };
-                        }),
+                        servers: this.parseServersFromConfig(returnedConfig.servers),
                         hasCheckers: true,
                         isToggling: false
                     };
                     this.data.value.push(newUpstream);
+                    this.saveDataToStorage();
                 }
-                
-                // 保存到 localStorage
-                localStorage.setItem('RestyPanel_upstreamsData', JSON.stringify(this.data.value));
             }
             
             // 关闭模态框
@@ -1116,5 +973,5 @@ class UpstreamsManager {
     }
 }
 
-// 导出管理器
+// 创建全局UpstreamsManager类
 window.UpstreamsManager = UpstreamsManager; 

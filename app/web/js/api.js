@@ -60,7 +60,7 @@ const TokenManager = {
         try {
             // 解析JWT token检查过期时间
             const payload = JSON.parse(atob(token.split('.')[1]));
-            console.log('Token payload:', payload);
+            // console.log('Token payload:', payload);
             
             // 检查token是否过期 (exp字段是Unix时间戳)
             const currentTime = Math.floor(Date.now() / 1000);

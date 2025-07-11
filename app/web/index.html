@@ -8,9 +8,9 @@
 
     <!-- 样式文件 -->
     <link rel="stylesheet" href="css/main.css">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <!-- <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Fira+Code&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code&display=swap" rel="stylesheet"> -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/theme/dracula.min.css">
 
@@ -152,37 +152,62 @@
             <main class="main-content">
                 <!-- Status 页面 -->
                 <div v-if="currentPage === 'status'" class="status-page">
-
                     <!-- 状态概览和控件 -->
                     <div class="status-overview">
                         <div class="status-card">
                             <h4>Total Requests</h4>
-                            <div class="status-value">{{ statusData.request_all_count ?? '--' }}</div>
-                            <div class="status-delta">Success: {{ statusData.request_success_count ?? '--' }}</div>
+                            <div class="status-value">
+                                {{ (statusManager && statusManager.statusData && statusManager.statusData.value) ?
+                                statusManager.statusData.value.request_all_count || '--' : '--' }}
+                            </div>
+                            <div class="status-delta">
+                                Success: {{ (statusManager && statusManager.statusData && statusManager.statusData.value) ?
+                                statusManager.statusData.value.request_success_count || '--' : '--' }}
+                            </div>
                         </div>
 
                         <div class="status-card">
                             <h4>Active Connections</h4>
-                            <div class="status-value">{{ statusData.connections_active ?? '--' }}</div>
+                            <div class="status-value">
+                                {{ (statusManager && statusManager.statusData && statusManager.statusData.value) ?
+                                statusManager.statusData.value.connections_active || '--' : '--' }}
+                            </div>
                             <div class="status-delta">
-                                R: {{ statusData.connections_reading ?? '--' }} |
-                                W: {{ statusData.connections_writing ?? '--' }} |
-                                Wait: {{ statusData.connections_waiting ?? '--' }}
+                                R: {{ (statusManager && statusManager.statusData && statusManager.statusData.value) ?
+                                statusManager.statusData.value.connections_reading || '--' : '--' }} |
+                                W: {{ (statusManager && statusManager.statusData && statusManager.statusData.value) ?
+                                statusManager.statusData.value.connections_writing || '--' : '--' }} |
+                                Wait: {{ (statusManager && statusManager.statusData && statusManager.statusData.value) ?
+                                statusManager.statusData.value.connections_waiting || '--' : '--' }}
                             </div>
                         </div>
 
                         <div class="status-card">
                             <h4>Traffic Read</h4>
-                            <div class="status-value">{{ statusData.traffic_read != null ?
-                                formatBytes(statusData.traffic_read) : '--' }}</div>
-                            <div class="status-delta">Write: {{ statusData.traffic_write != null ?
-                                formatBytes(statusData.traffic_write) : '--' }}</div>
+                            <div class="status-value">
+                                {{ (statusManager && statusManager.statusData && statusManager.statusData.value &&
+                                statusManager.statusData.value.traffic_read != null) ?
+                                formatBytes(statusManager.statusData.value.traffic_read) : '--' }}
+                            </div>
+                            <div class="status-delta">
+                                Write: {{ (statusManager && statusManager.statusData && statusManager.statusData.value &&
+                                statusManager.statusData.value.traffic_write != null) ?
+                                formatBytes(statusManager.statusData.value.traffic_write) : '--' }}
+                            </div>
                         </div>
 
                         <div class="status-card">
                             <h4>Start Time</h4>
-                            <div class="status-value">{{ formatUptime(statusData.boot_time) }}</div>
-                            <div class="status-delta">Start at: {{ formatBootTime(statusData.boot_time) }}</div>
+                            <div class="status-value">
+                                {{ (statusManager && statusManager.statusData && statusManager.statusData.value &&
+                                statusManager.statusData.value.boot_time) ?
+                                formatUptime(statusManager.statusData.value.boot_time) : '--' }}
+                            </div>
+                            <div class="status-delta">
+                                Start at: {{ (statusManager && statusManager.statusData && statusManager.statusData.value &&
+                                statusManager.statusData.value.boot_time) ?
+                                formatBootTime(statusManager.statusData.value.boot_time) : '--' }}
+                            </div>
                         </div>
 
                         <div class="status-card controls-card">
@@ -190,10 +215,11 @@
                             <div class="status-delta">
                                 <div class="controls-row">
                                     <label class="auto-refresh-label">
-                                        <input type="checkbox" v-model="autoRefresh" @change="toggleAutoRefresh">
+                                        <input type="checkbox" v-model="statusManager.autoRefresh.value" @change="statusManager.toggleAutoRefresh()">
                                         <span>Auto Refresh</span>
                                     </label>
-                                    <select v-if="autoRefresh" v-model="refreshInterval" @change="updateRefreshInterval"
+                                    <select v-if="statusManager.autoRefresh.value" v-model="statusManager.refreshInterval.value"
+                                        @change="statusManager.updateRefreshInterval()"
                                         class="interval-select">
                                         <option value="3">3s</option>
                                         <option value="5">5s</option>
@@ -201,16 +227,17 @@
                                         <option value="15">15s</option>
                                         <option value="30">30s</option>
                                     </select>
-                                    <button v-if="!autoRefresh" @click="refreshStatus" :disabled="isRefreshing"
+                                    <button v-if="!statusManager.autoRefresh.value" @click="statusManager.manualRefresh()"
+                                        :disabled="statusManager.isRefreshing.value"
                                         class="refresh-btn">
-                                        <span v-if="isRefreshing">Refreshing...</span>
+                                        <span v-if="statusManager.isRefreshing.value">Refreshing...</span>
                                         <span v-else>Refresh</span>
                                     </button>
                                 </div>
                                 <div class="controls-row">
                                     <label class="time-window-label">
                                         <span>Time Window: </span>
-                                        <select v-model="timeWindow" @change="updateTimeWindow"
+                                        <select v-model="statusManager.timeWindow.value" @change="statusManager.setTimeWindow()"
                                             class="time-window-select">
                                             <option value="60">1Min</option>
                                             <option value="300">5Mins</option>
@@ -223,6 +250,14 @@
                             </div>
                         </div>
                     </div>
+
+                    <!-- 调试面板
+                                        <div class="debug-panel" style="margin-top: 20px; padding: 10px; background: #f5f5f5; border-radius: 4px;">
+                                            <h3>数据调试</h3>
+                                            <button @click="console.log(statusManager.statusData)" class="refresh-btn">打印状态数据</button>
+                                            <pre
+                                                style="background: #eee; padding: 10px; max-height: 150px; overflow: auto;">{{ JSON.stringify(statusManager.statusData.value, null, 2) }}</pre>
+                                        </div> -->
 
                     <!-- 图表区域 -->
                     <div class="charts-grid">
@@ -1121,8 +1156,8 @@
 
     </div> <!-- end of #app -->
     <!-- JavaScript文件 -->
-    <script src="js/api.js"></script>
     <script src="js/notification.js"></script>
+    <script src="js/api.js"></script>
     <script src="js/status.js"></script>
     <script src="js/upstreams.js"></script>
     <script src="js/servers.js"></script>

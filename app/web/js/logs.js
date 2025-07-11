@@ -3,57 +3,71 @@
  * 处理日志文件列表、内容查看、搜索过滤和GoAccess分析功能
  */
 
-// 使用Vue的响应式API
-const logsManager = {
-    // 日志文件列表
-    files: Vue.ref([]),
-    // 当前选中的日志文件
-    currentFile: Vue.ref(null),
-    // 日志内容
-    content: Vue.ref([]),
-    // 分页信息
-    pagination: Vue.ref({
-        current_page: 1,
-        page_size: 1000,
-        total_lines: 0,
-        total_pages: 0
-    }),
-    // 搜索过滤
-    filter: Vue.ref(""),
-    // 加载状态
-    isLoading: Vue.ref(false),
-    // 错误信息
-    error: Vue.ref(null),
-    // 最后更新时间
-    lastUpdateTime: Vue.ref(null),
-    // GoAccess分析报告
-    reports: Vue.ref([]),
-    // 按日志文件分组的报告
-    groupedReports: Vue.ref({}),
-    // 展开的报告组
-    expandedGroups: Vue.ref({}),
-    // 模态框状态
-    showReportModal: Vue.ref(false),
-    // 当前报告URL
-    currentReportUrl: Vue.ref(""),
-    // 快速分析成功后的临时报告链接
-    quickReportUrl: Vue.ref(null),
-    // GoAccess配置选项
-    goaccessOptions: Vue.ref({
-        log_format: "",
-        date_format: "",
-        time_format: ""
-    }),
-    // 删除所有报告的确认模态框状态
-    showDeleteAllConfirmModal: Vue.ref(false),
+class LogsManager {
+    constructor() {
+        // 日志文件列表
+        this.files = Vue.ref([]);
+        // 当前选中的日志文件
+        this.currentFile = Vue.ref(null);
+        // 日志内容
+        this.content = Vue.ref([]);
+        // 分页信息
+        this.pagination = Vue.ref({
+            current_page: 1,
+            page_size: 1000,
+            total_lines: 0,
+            total_pages: 0
+        });
+        // 搜索过滤
+        this.filter = Vue.ref("");
+        // 加载状态
+        this.isLoading = Vue.ref(false);
+        // 错误信息
+        this.error = Vue.ref(null);
+        // 最后更新时间
+        this.lastUpdateTime = Vue.ref(null);
+        // GoAccess分析报告
+        this.reports = Vue.ref([]);
+        // 按日志文件分组的报告
+        this.groupedReports = Vue.ref({});
+        // 展开的报告组
+        this.expandedGroups = Vue.ref({});
+        // 模态框状态
+        this.showReportModal = Vue.ref(false);
+        // 当前报告URL
+        this.currentReportUrl = Vue.ref("");
+        // 快速分析成功后的临时报告链接
+        this.quickReportUrl = Vue.ref(null);
+        // GoAccess配置选项
+        this.goaccessOptions = Vue.ref({
+            log_format: "",
+            date_format: "",
+            time_format: ""
+        });
+        // 删除所有报告的确认模态框状态
+        this.showDeleteAllConfirmModal = Vue.ref(false);
+        
+        // 绑定方法上下文
+        this.init = this.init.bind(this);
+        this.fetchLogFiles = this.fetchLogFiles.bind(this);
+        this.fetchLogContent = this.fetchLogContent.bind(this);
+        this.fetchReports = this.fetchReports.bind(this);
+        this.selectFile = this.selectFile.bind(this);
+        this.applyFilter = this.applyFilter.bind(this);
+        this.formatReportName = this.formatReportName.bind(this);
+        this.openReportModal = this.openReportModal.bind(this);
+        this.closeReportModal = this.closeReportModal.bind(this);
+        this.groupReportsByLogFile = this.groupReportsByLogFile.bind(this);
+    }
 
     /**
      * 初始化日志管理器
      */
     init() {
+        console.log('Initializing logs manager...');
         this.fetchLogFiles();
         this.fetchReports();
-    },
+    }
 
     /**
      * 获取日志文件列表
@@ -70,13 +84,16 @@ const logsManager = {
             } else {
                 this.error.value = response.data.message || '获取日志文件失败';
             }
+            
+            return this.files.value;
         } catch (err) {
             this.error.value = err.message || '获取日志文件失败';
             console.error('Error fetching log files:', err);
+            throw err;
         } finally {
             this.isLoading.value = false;
         }
-    },
+    }
 
     /**
      * 选择日志文件并获取内容
@@ -88,7 +105,7 @@ const logsManager = {
         this.filter.value = "";
         this.quickReportUrl.value = null; // 切换文件时重置快速分析报告链接
         await this.fetchLogContent();
-    },
+    }
 
     /**
      * 获取日志内容
@@ -110,32 +127,35 @@ const logsManager = {
             if (response.data.code === 200) {
                 this.content.value = response.data.data.content;
                 this.pagination.value = response.data.data.pagination;
+                return this.content.value;
             } else {
                 this.error.value = response.data.message || '获取日志内容失败';
+                throw new Error(this.error.value);
             }
         } catch (err) {
             this.error.value = err.message || '获取日志内容失败';
             console.error('Error fetching log content:', err);
+            throw err;
         } finally {
             this.isLoading.value = false;
         }
-    },
+    }
 
     /**
      * 应用过滤器
      */
     applyFilter() {
         this.pagination.value.current_page = 1;
-        this.fetchLogContent();
-    },
+        return this.fetchLogContent();
+    }
 
     /**
      * 清除过滤器
      */
     clearFilter() {
         this.filter.value = "";
-        this.applyFilter();
-    },
+        return this.applyFilter();
+    }
 
     /**
      * 切换到指定页
@@ -144,8 +164,8 @@ const logsManager = {
     goToPage(page) {
         if (page < 1 || page > this.pagination.value.total_pages) return;
         this.pagination.value.current_page = page;
-        this.fetchLogContent();
-    },
+        return this.fetchLogContent();
+    }
 
     /**
      * 打开GoAccess分析模态框
@@ -156,7 +176,7 @@ const logsManager = {
             return;
         }
         this.showReportModal.value = true;
-    },
+    }
 
     /**
      * 关闭GoAccess分析模态框
@@ -164,7 +184,21 @@ const logsManager = {
     closeAnalyzeModal() {
         this.showReportModal.value = false;
         this.currentReportUrl.value = "";
-    },
+    }
+    
+    /**
+     * 打开报告模态框
+     */
+    openReportModal() {
+        this.showReportModal.value = true;
+    }
+    
+    /**
+     * 关闭报告模态框
+     */
+    closeReportModal() {
+        this.showReportModal.value = false;
+    }
 
     /**
      * 使用GoAccess进行快速分析 (一键分析)
@@ -195,18 +229,21 @@ const logsManager = {
                 
                 // 重新获取报告列表以更新分组
                 this.fetchReports();
+                return this.quickReportUrl.value;
             } else {
                 this.error.value = response.data.message || '快速分析失败';
                 showNotification(this.error.value, 'error');
+                throw new Error(this.error.value);
             }
         } catch (err) {
             this.error.value = err.message || '快速分析失败';
             showNotification(this.error.value, 'error');
             console.error('Error during quick analysis:', err);
+            throw err;
         } finally {
             this.isLoading.value = false;
         }
-    },
+    }
 
     /**
      * 使用GoAccess分析日志
@@ -234,16 +271,19 @@ const logsManager = {
                 
                 // 重新获取报告列表以更新分组
                 this.fetchReports();
+                return this.currentReportUrl.value;
             } else {
                 this.error.value = response.data.message || '分析日志失败';
+                throw new Error(this.error.value);
             }
         } catch (err) {
             this.error.value = err.message || '分析日志失败';
             console.error('Error analyzing log:', err);
+            throw err;
         } finally {
             this.isLoading.value = false;
         }
-    },
+    }
 
     /**
      * 获取所有可用的分析报告
@@ -275,12 +315,14 @@ const logsManager = {
                 }
                 
                 this.lastUpdateTime.value = new Date();
+                return this.reports.value;
             } else {
                 this.error.value = response.data.message || '获取报告列表失败';
                 console.error('Failed to fetch reports:', response.data.message);
                 // Initialize to empty array on error
                 this.reports.value = [];
                 this.groupedReports.value = {};
+                throw new Error(this.error.value);
             }
         } catch (err) {
             this.error.value = err.message || '获取报告列表失败';
@@ -288,10 +330,11 @@ const logsManager = {
             // Initialize to empty array on error
             this.reports.value = [];
             this.groupedReports.value = {};
+            throw err;
         } finally {
             this.isLoading.value = false;
         }
-    },
+    }
     
     /**
      * 格式化报告名称为更友好的显示
@@ -318,7 +361,7 @@ const logsManager = {
         
         // 如果不是新格式，直接返回原名称
         return reportName;
-    },
+    }
     
     /**
      * 按日志文件名分组报告
@@ -357,7 +400,7 @@ const logsManager = {
         
         this.groupedReports.value = grouped;
         this.expandedGroups.value = newExpandedGroups;
-    },
+    }
     
     /**
      * 切换报告分组的展开/折叠状态
@@ -368,7 +411,7 @@ const logsManager = {
         const newExpandedGroups = { ...this.expandedGroups.value };
         newExpandedGroups[logFile] = !newExpandedGroups[logFile];
         this.expandedGroups.value = newExpandedGroups;
-    },
+    }
     
     /**
      * 删除单个报告
@@ -400,7 +443,7 @@ const logsManager = {
                 }
             }
         });
-    },
+    }
     
     /**
      * 删除指定日志文件的所有报告
@@ -447,21 +490,21 @@ const logsManager = {
                 }
             }
         });
-    },
+    }
     
     /**
      * 删除所有报告的确认对话框
      */
-    showDeleteAllReportsModal() {
-        this.showDeleteAllConfirmModal = true;
-    },
+    showDeleteAllConfirmModal() {
+        this.showDeleteAllConfirmModal.value = true;
+    }
 
     /**
      * 关闭删除所有报告确认模态框
      */
-    closeDeleteAllReportsModal() {
-        this.showDeleteAllConfirmModal = false;
-    },
+    closeDeleteAllConfirmModal() {
+        this.showDeleteAllConfirmModal.value = false;
+    }
 
     /**
      * 删除所有报告
@@ -494,7 +537,7 @@ const logsManager = {
                 }
             }
         });
-    },
+    }
 
     /**
      * 格式化时间
@@ -505,7 +548,7 @@ const logsManager = {
         if (!timestamp) return '';
         const date = new Date(timestamp * 1000);
         return date.toLocaleString();
-    },
+    }
 
     /**
      * 格式化文件大小
@@ -518,7 +561,7 @@ const logsManager = {
         const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
         const i = Math.floor(Math.log(bytes) / Math.log(k));
         return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-    },
+    }
 
     /**
      * 计算运行时间
@@ -532,7 +575,7 @@ const logsManager = {
         const minutes = Math.floor((uptime % 3600) / 60);
         const seconds = uptime % 60;
         return `${hours}h ${minutes}m ${seconds}s`;
-    },
+    }
 
     /**
      * 分析界面相关功能
@@ -589,7 +632,40 @@ const logsManager = {
                 showNotification(this.error.value, 'error');
             });
     }
-};
 
-// 导出日志管理器
-window.logsManager = logsManager; 
+    /**
+     * 处理ESC键关闭模态框
+     */
+    handleEscKey() {
+        if (this.showReportModal.value) {
+            this.closeReportModal();
+        } else if (this.showDeleteAllConfirmModal.value) {
+            this.closeDeleteAllConfirmModal();
+        }
+    }
+    
+    /**
+     * 关闭所有下拉菜单
+     */
+    closeDropdowns() {
+        // 如果有任何下拉菜单，在这里实现关闭逻辑
+    }
+    
+    /**
+     * 清理资源
+     */
+    cleanup() {
+        this.files.value = [];
+        this.content.value = [];
+        this.reports.value = [];
+        this.groupedReports.value = {};
+        this.showReportModal.value = false;
+        this.showDeleteAllConfirmModal.value = false;
+        this.currentFile.value = null;
+        this.currentReportUrl.value = "";
+        this.quickReportUrl.value = null;
+    }
+}
+
+// 创建全局LogsManager类
+window.LogsManager = LogsManager; 

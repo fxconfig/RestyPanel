@@ -7,7 +7,9 @@
     <title>Resty Panel</title>
 
     <!-- 样式文件 -->
-    <link rel="stylesheet" href="css/main.css">
+    <link rel="stylesheet" href="css/base.css">
+    <link rel="stylesheet" href="css/components.css">
+    <link rel="stylesheet" href="css/pages.css">
     <!-- <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Fira+Code&display=swap" rel="stylesheet"> -->
@@ -175,7 +177,7 @@
                             <div class="status-delta">
                                 R: {{ (statusManager && statusManager.statusData && statusManager.statusData.value) ?
                                 statusManager.statusData.value.connections_reading || '--' : '--' }} |
-                                W: {{ (statusManager && statusManager.statusData && statusManager.statusData.value) ?
+                                W: {{ (statusManager.statusData && statusManager.statusData.value) ?
                                 statusManager.statusData.value.connections_writing || '--' : '--' }} |
                                 Wait: {{ (statusManager && statusManager.statusData && statusManager.statusData.value) ?
                                 statusManager.statusData.value.connections_waiting || '--' : '--' }}
@@ -250,14 +252,6 @@
                             </div>
                         </div>
                     </div>
-
-                    <!-- 调试面板
-                                        <div class="debug-panel" style="margin-top: 20px; padding: 10px; background: #f5f5f5; border-radius: 4px;">
-                                            <h3>数据调试</h3>
-                                            <button @click="console.log(statusManager.statusData)" class="refresh-btn">打印状态数据</button>
-                                            <pre
-                                                style="background: #eee; padding: 10px; max-height: 150px; overflow: auto;">{{ JSON.stringify(statusManager.statusData.value, null, 2) }}</pre>
-                                        </div> -->
 
                     <!-- 图表区域 -->
                     <div class="charts-grid">
@@ -409,15 +403,6 @@
                                 </div>
                             </div>
                             <table class="server-table">
-                                <thead>
-                                    <tr>
-                                        <th>Address</th>
-                                        <th>Weight</th>
-                                        <th>Status</th>
-                                        <th>Enable</th>
-                                        <th>Action</th>
-                                    </tr>
-                                </thead>
                                 <tbody>
                                     <tr v-for="srv in up.servers" :key="srv.address" :class="{'dynamic-server': srv.isDynamic}">
                                         <td>{{ srv.address }} <span v-if="srv.isDynamic" class="dynamic-label"

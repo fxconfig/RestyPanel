@@ -20,9 +20,6 @@ Thumbs.db
 # 编译输出
 *.luac
 
-# 临时配置文件
-app/configs/*.conf.failed
-app/configs/*.conf.backup
 
 # 环境文件
 .env
@@ -32,4 +29,6 @@ app/configs/*.conf.backup
 # 依赖目录
 /node_modules/ 
 app/configs/
+app/web/reports/
+
 docker-compose.yml

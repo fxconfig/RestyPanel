@@ -1,0 +1,617 @@
+/* 
+base.css 文件是基础样式文件，包含基础样式、变量和基本布局框架，如：
+颜色变量定义
+基础重置样式
+布局框架（侧边栏、主布局、顶部栏）
+登录页面样式
+通用页面布局
+通知弹窗样式
+
+*/
+:root {
+    --text-color: #a0aec0;
+    --hover-color: rgba(255, 255, 255, 0.1);
+    --active-color: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+    --active-text: white;
+    --danger-color: #e53e3e;
+    --danger-hover-color: #c53030;
+}
+
+/* 基础样式重置 */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
+    background: #f5f7fa;
+    min-height: 100vh;
+    color: #333;
+    overflow-x: hidden;
+}
+
+/* Vue.js cloak */
+[v-cloak] {
+    display: none;
+}
+
+/* 侧边栏样式 */
+.sidebar {
+    position: fixed;
+    left: 0;
+    top: 0;
+    width: 250px;
+    height: 100vh;
+    background: linear-gradient(180deg, #2d3748 0%, #1a202c 100%);
+    border-right: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 2px 0 20px rgba(0, 0, 0, 0.15);
+    display: flex;
+    flex-direction: column;
+    transition: all 0.3s ease;
+    z-index: 1000;
+}
+
+.sidebar.collapsed {
+    width: 70px;
+}
+
+.sidebar-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1.5rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    min-height: 80px;
+}
+
+.brand-logo h1 {
+    color: #ffffff;
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin: 0;
+}
+
+.brand-icon {
+    color: #ffffff;
+    font-size: 1.8rem;
+    font-weight: 700;
+}
+
+.toggle-btn {
+    background: transparent;
+    border: none;
+    color: #a0aec0;
+    font-size: 1.5rem;
+    cursor: pointer;
+    padding: 0.3rem;
+    border-radius: 4px;
+    transition: all 0.3s ease;
+    line-height: 1;
+}
+
+.toggle-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: #ffffff;
+}
+
+.sidebar-nav {
+    flex: 1;
+    padding: 1rem 0;
+}
+
+.nav-item {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    padding: 0.75rem 1.5rem;
+    border: none;
+    background: transparent;
+    color: #a0aec0;
+    font-size: 0.95rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-align: left;
+    gap: 1rem;
+}
+
+.nav-item:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: #ffffff;
+}
+
+.nav-item.active {
+    background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-right: 3px solid #4c51bf;
+    box-shadow: 0 2px 10px rgba(102, 126, 234, 0.3);
+}
+
+.nav-icon {
+    font-size: 1.2rem;
+    width: 20px;
+    text-align: center;
+    flex-shrink: 0;
+}
+
+.nav-text {
+    white-space: nowrap;
+    overflow: hidden;
+}
+
+.sidebar-footer {
+    padding: 1rem 0;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    min-height: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #718096;
+    font-size: 0.8rem;
+}
+
+/* 主布局容器 */
+.main-layout {
+    margin-left: 250px;
+    min-height: 100vh;
+    transition: margin-left 0.3s ease;
+    display: flex;
+    flex-direction: column;
+}
+
+.main-layout.sidebar-collapsed {
+    margin-left: 70px;
+}
+
+/* 顶部状态栏 */
+.top-bar {
+    position: sticky;
+    top: 0;
+    background: #ffffff;
+    border-bottom: 1px solid #e2e8f0;
+    padding: 1rem 1.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    z-index: 100;
+    min-height: 70px;
+}
+
+.top-bar-left .page-title {
+    color: #2d3748;
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin: 0;
+}
+
+.top-bar-right {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+}
+
+.user-info {
+    display: flex;
+    align-items: center;
+    padding: 0.5rem 1rem;
+    background: #f7fafc;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+}
+
+.user-name {
+    color: #4a5568;
+    font-size: 0.9rem;
+    font-weight: 500;
+}
+
+.top-logout-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: linear-gradient(135deg, #e53e3e 0%, #c53030 100%);
+    color: white;
+    border: none;
+    padding: 0.6rem 1.2rem;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 8px rgba(229, 62, 62, 0.3);
+}
+
+.top-logout-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(229, 62, 62, 0.4);
+}
+
+.logout-icon {
+    font-size: 1rem;
+}
+
+/* 主要内容区域 */
+.main-content {
+    flex: 1;
+    padding: 1.5rem;
+    background: #f5f7fa;
+}
+
+/* 登录容器 */
+.login-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    padding: 2rem;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.login-box {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 3rem;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+    width: 100%;
+    max-width: 400px;
+    border: 1px solid #e2e8f0;
+}
+
+.login-header {
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+.login-header h2 {
+    color: #2d3748;
+    margin-bottom: 0.5rem;
+    font-size: 1.8rem;
+    font-weight: 600;
+}
+
+.login-header p {
+    color: #4a5568;
+    font-size: 0.9rem;
+}
+
+/* 表单样式 */
+.form-group {
+    margin-bottom: 1.5rem;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    color: #4a5568;
+    font-weight: 500;
+}
+
+.form-group input {
+    width: 100%;
+    padding: 1rem;
+    border: 2px solid #e2e8f0;
+    border-radius: 10px;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+    background: #ffffff;
+}
+
+.form-group input:focus {
+    outline: none;
+    border-color: #667eea;
+    background: white;
+    transform: translateY(-2px);
+    box-shadow: 0 10px 20px rgba(102, 126, 234, 0.1);
+}
+
+.login-btn {
+    width: 100%;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    padding: 1rem;
+    border-radius: 10px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.login-btn:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 15px 30px rgba(102, 126, 234, 0.4);
+}
+
+.login-btn:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+}
+
+.error-message {
+    background: #fed7d7;
+    color: #c53030;
+    padding: 1rem;
+    border-radius: 8px;
+    margin-top: 1rem;
+    border-left: 4px solid #c53030;
+    font-size: 0.9rem;
+}
+
+/* 通用页面内容 */
+.page-content {
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+.page-header {
+    text-align: center;
+    margin-bottom: 1rem;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 3rem 2rem;
+    border-radius: 16px;
+    box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
+}
+
+.page-header h2 {
+    color: white;
+    font-size: 2.5rem;
+    margin-bottom: 0.5rem;
+    font-weight: 600;
+}
+
+.page-header p {
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 1.1rem;
+}
+
+/* 移动端菜单按钮 */
+.mobile-menu-btn {
+    display: none;
+    position: fixed;
+    top: 1rem;
+    left: 1rem;
+    z-index: 1001;
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 0.75rem;
+    cursor: pointer;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+}
+
+.mobile-menu-btn:hover {
+    background: #f7fafc;
+    transform: scale(1.05);
+}
+
+.hamburger-icon {
+    font-size: 1.2rem;
+    color: #2d3748;
+}
+
+/* 侧边栏覆盖层 */
+.sidebar-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 999;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.sidebar-overlay.show {
+    opacity: 1;
+}
+
+/* 通知弹窗样式 */
+.notification-stack {
+    position: fixed;
+    top: 48px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 4000;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    pointer-events: none;
+    width: 100vw;
+    max-width: 100vw;
+}
+
+.notification-popup {
+    min-width: 320px;
+    max-width: 90vw;
+    padding: 1.2rem 2rem;
+    border-radius: 10px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.18);
+    font-size: 1.1rem;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: slideDownIn 0.4s cubic-bezier(.4, 1.4, .6, 1) both;
+    background: #fff;
+    pointer-events: auto;
+    margin: 0 auto;
+}
+
+.notification-popup.hiding {
+    animation: slideUpOut 0.4s cubic-bezier(.4, 1.4, .6, 1) both;
+}
+
+@keyframes slideDownIn {
+    from {
+        opacity: 0;
+        transform: translateY(-40px) scale(0.98);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+@keyframes slideUpOut {
+    from {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+
+    to {
+        opacity: 0;
+        transform: translateY(-40px) scale(0.98);
+    }
+}
+
+.notification-popup.success {
+    background: #f0fff4;
+    border: 1px solid #68d391;
+    color: #22543d;
+}
+
+.notification-popup.error {
+    background: #fed7d7;
+    border: 1px solid #fc8181;
+    color: #742a2a;
+}
+
+.notification-popup.warning {
+    background: #fffbeb;
+    border: 1px solid #f6ad55;
+    color: #744210;
+}
+
+.notification-popup.info {
+    background: #ebf8ff;
+    border: 1px solid #63b3ed;
+    color: #2a4365;
+}
+
+.notification-content {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+}
+
+.notification-icon {
+    font-size: 1.2rem;
+    flex-shrink: 0;
+}
+
+.notification-message {
+    font-size: 0.9rem;
+    font-weight: 500;
+    line-height: 1.4;
+}
+
+/* 响应式设计 */
+@media (max-width: 1200px) {
+    .status-overview {
+        grid-template-columns: repeat(3, minmax(160px, 1fr));
+    }
+}
+
+@media (max-width: 900px) {
+    .status-overview {
+        grid-template-columns: repeat(2, minmax(150px, 1fr));
+    }
+}
+
+@media (max-width: 768px) {
+    .mobile-menu-btn {
+        display: block;
+    }
+
+    .sidebar-overlay {
+        display: block;
+    }
+
+    .sidebar {
+        transform: translateX(-100%);
+        width: 280px;
+    }
+
+    .sidebar.collapsed {
+        transform: translateX(-100%);
+    }
+
+    .sidebar:not(.collapsed) {
+        transform: translateX(0);
+    }
+
+    .main-layout {
+        margin-left: 0;
+    }
+
+    .main-layout.sidebar-collapsed {
+        margin-left: 0;
+    }
+
+    .sidebar-overlay:not(.show) {
+        display: none;
+    }
+
+    /* 顶部栏移动端适配 */
+    .top-bar {
+        padding: 0.75rem 1rem;
+        padding-left: 4rem;
+        min-height: 60px;
+    }
+
+    .top-bar-left .page-title {
+        font-size: 1.2rem;
+    }
+
+    .top-bar-right {
+        gap: 0.75rem;
+    }
+
+    .user-info {
+        display: none;
+    }
+
+    .top-logout-btn {
+        padding: 0.5rem 0.8rem;
+        font-size: 0.8rem;
+    }
+
+    .logout-text {
+        display: none;
+    }
+
+    .main-content {
+        padding: 1rem;
+    }
+
+    .login-box {
+        padding: 2rem;
+        margin: 1rem;
+    }
+
+    .page-header h2 {
+        font-size: 2rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .feature-list {
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .feature-tag {
+        font-size: 0.7rem;
+    }
+}

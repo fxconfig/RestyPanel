@@ -1,0 +1,1275 @@
+/*
+
+pages.css 文件是页面样式文件，包含特定页面的样式，如：
+Status 状态页面
+Upstreams 上游管理页面
+Servers 服务器管理页面
+Logs 日志分析页面
+Reports 报告页面
+Settings 设置页面
+各页面的响应式设计
+
+*/
+
+/* Status 页面样式 */
+.status-page {
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+.status-overview {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(180px, 1fr));
+    gap: 1.2rem;
+    margin-bottom: 2rem;
+}
+
+/* 图表网格 */
+.charts-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    grid-template-rows: repeat(3, 1fr);
+    gap: 1.5rem;
+    width: 100%;
+}
+
+/* Upstreams页面样式 */
+.upstreams-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.2rem;
+    margin-top: 1rem;
+}
+
+.upstream-card {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 1rem 1.5rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    transition: all 0.3s ease;
+}
+
+.upstream-card.disabled {
+    background-color: #f8fafc;
+    opacity: 0.6;
+    filter: grayscale(90%);
+    box-shadow: none;
+    border-color: #e5e7eb;
+}
+
+.upstream-card.disabled:hover {
+    transform: none;
+    box-shadow: none;
+}
+
+.upstream-card.disabled .upstream-title h3 {
+    color: #9ca3af;
+}
+
+.upstream-card:hover {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.upstream-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+    padding-bottom: 0.8rem;
+    border-bottom: 1px solid #edf2f7;
+}
+
+.upstream-title {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+}
+
+.upstream-title h3 {
+    margin: 0;
+    color: #2d3748;
+    font-size: 1.1rem;
+    font-weight: 600;
+}
+
+.upstream-status {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.upstream-status .checker-status {
+    margin-left: 0.5rem;
+}
+
+.checker-status {
+    padding: 0.2rem 0.8rem;
+    background: transparent;
+    color: #e53e3e;
+    font-size: 0.8rem;
+    border-radius: 16px;
+    font-weight: 500;
+    letter-spacing: 0.5px;
+    border: 1px solid #e53e3e;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 28px;
+    cursor: pointer;
+    transition: background 0.2s, color 0.2s, box-shadow 0.2s, border-color 0.2s;
+    position: relative;
+    overflow: hidden;
+}
+
+.checker-status:hover {
+    background: linear-gradient(90deg, #ffe5e5 0%, #ffd6d6 100%);
+    color: #b91c1c;
+    border-color: #b91c1c;
+    box-shadow: 0 2px 8px rgba(229, 62, 62, 0.08);
+}
+
+.checker-status.checking {
+    color: #38a169;
+    border-color: #38a169;
+    background: linear-gradient(90deg, #f0fff4 0%, #e6fffa 100%);
+}
+
+.checker-status.checking:hover {
+    background: linear-gradient(90deg, #e6fffa 0%, #d1f2eb 100%);
+    color: #2f855a;
+    border-color: #2f855a;
+    box-shadow: 0 2px 8px rgba(56, 161, 105, 0.08);
+}
+
+@keyframes pulse-warning {
+    0% {
+        box-shadow: 0 2px 8px rgba(245, 101, 101, 0.3);
+    }
+
+    50% {
+        box-shadow: 0 4px 16px rgba(245, 101, 101, 0.5);
+        transform: translateY(-1px);
+    }
+
+    100% {
+        box-shadow: 0 2px 8px rgba(245, 101, 101, 0.3);
+    }
+}
+
+.upstream-controls {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-top: 0.2rem;
+}
+
+.edit-upstream-btn {
+    background: transparent;
+    color: #4a5568;
+    border: 1px solid #e2e8f0;
+    padding: 0.4rem 0.6rem;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 1rem;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 32px;
+    height: 32px;
+}
+
+.edit-upstream-btn:hover {
+    background: #f7fafc;
+    border-color: #cbd5e0;
+    color: #2d3748;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.delete-upstream-btn {
+    background: transparent;
+    color: #e53e3e;
+    border: 1px solid #e53e3e;
+    padding: 0.4rem 0.6rem;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 1rem;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 32px;
+    height: 32px;
+}
+
+.delete-upstream-btn:hover {
+    background: #e53e3e;
+    color: white;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(229, 62, 62, 0.3);
+}
+
+.last-update-time {
+    color: #718096;
+    font-size: 0.8rem;
+    padding: 0.2rem 0;
+}
+
+/* Action bar 样式 */
+.action-bar {
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+    width: 100%;
+    margin-bottom: 1rem;
+    gap: 2rem;
+}
+
+.add-upstream-btn {
+    background: linear-gradient(135deg, #38a169 0%, #2f855a 100%);
+    color: white;
+    border: none;
+    padding: 0.6rem 1.2rem;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 8px rgba(56, 161, 105, 0.3);
+}
+
+.add-upstream-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(56, 161, 105, 0.4);
+}
+
+.add-upstream-btn span:first-child {
+    font-size: 1.2rem;
+    font-weight: 700;
+}
+
+.show-upstream-conf-btn {
+    background: linear-gradient(135deg, #4299e1 0%, #667eea 100%);
+    color: white;
+    border: none;
+    padding: 0.6rem 1.2rem;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 8px rgba(66, 153, 225, 0.18);
+    margin-left: 1rem;
+}
+
+.show-upstream-conf-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(66, 153, 225, 0.28);
+    background: linear-gradient(135deg, #3182ce 0%, #5a67d8 100%);
+}
+
+.show-upstream-conf-btn span:first-child {
+    font-size: 1.2rem;
+    font-weight: 700;
+}
+
+/* Add Server Button */
+.add-server-btn {
+    background: linear-gradient(135deg, #4299e1, #3182ce);
+    color: white;
+    border: none;
+    padding: 0.6rem 1.2rem;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 8px rgba(66, 153, 225, 0.18);
+}
+
+.add-server-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(66, 153, 225, 0.28);
+    background: linear-gradient(135deg, #3182ce, #2c5282);
+}
+
+.add-server-btn span:first-child {
+    font-size: 1.2rem;
+    font-weight: 700;
+}
+
+/* Delete Server Button */
+.delete-server-btn {
+    background: none;
+    color: #e53e3e;
+    border: none;
+    cursor: pointer;
+    margin-left: 0.5rem;
+    font-size: 1.2rem;
+    padding: 0.2rem 0.4rem;
+    border-radius: 3px;
+    display: inline-block;
+    text-align: center;
+    width: 28px;
+    height: 28px;
+    line-height: 22px;
+    vertical-align: middle;
+}
+
+.delete-server-btn:hover {
+    background: rgba(229, 62, 62, 0.1);
+}
+
+/* New Server Row */
+.new-server-row {
+    background-color: #f8fafc;
+}
+
+.server-table tfoot {
+    outline: 2px dashed #cbd5e0;
+    outline-offset: -1px;
+    display: table-row-group;
+}
+
+.new-server-row td {
+    border: none;
+    padding: 0.75rem 0.5rem;
+}
+
+.new-server-row .server-input,
+.new-server-row .weight-input {
+    border: 1px solid #e2e8f0;
+    border-radius: 4px;
+    padding: 0.3rem 0.5rem;
+    width: 100%;
+    max-width: 140px;
+}
+
+.new-server-row .server-input {
+    max-width: 180px;
+}
+
+.new-server-row .add-server-btn {
+    background: none;
+    color: #38a169;
+    border: none;
+    cursor: pointer;
+    margin-left: 0.5rem;
+    font-size: 1.2rem;
+    padding: 0.2rem 0.4rem;
+    border-radius: 3px;
+    display: inline-block;
+    text-align: center;
+    width: 28px;
+    height: 28px;
+    line-height: 22px;
+    vertical-align: middle;
+}
+
+.new-server-row .add-server-btn:hover {
+    background: rgba(56, 161, 105, 0.1);
+}
+
+/* 服务器管理页面样式 */
+.servers-page {
+    padding: 1rem;
+}
+
+.status-summary {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.create-server-card {
+    background: linear-gradient(135deg, #6b7280, #4b5563);
+    color: white;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+}
+
+.create-server-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(75, 85, 99, 0.4);
+    background: linear-gradient(135deg, #4b5563, #374151);
+}
+
+.servers-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+    gap: 1.5rem;
+    margin-top: 1.5rem;
+}
+
+.server-card {
+    background-color: #fff;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    padding: 1rem 1rem 1rem 1.2rem;
+    transition: all 0.3s ease;
+    border-left: 12px solid #e2e8f0;
+    position: relative;
+    overflow: hidden;
+}
+
+.server-card:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    transform: translateY(-2px);
+}
+
+.server-card::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    height: 100%;
+    width: 12px;
+    background-color: inherit;
+    opacity: 0.1;
+}
+
+.server-card.status-enabled {
+    border-left-color: #10b981;
+}
+
+.server-card.status-enabled::before {
+    background-color: #10b981;
+}
+
+.server-card.status-disabled {
+    border-left-color: #f59e0b;
+}
+
+.server-card.status-disabled::before {
+    background-color: #f59e0b;
+}
+
+.server-card.status-backup {
+    border-left-color: #6366f1;
+}
+
+.server-card.status-backup::before {
+    background-color: #6366f1;
+}
+
+.server-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 1rem;
+    flex-wrap: wrap;
+}
+
+.server-title {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.server-title h3 {
+    margin: 0;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #1e293b;
+}
+
+.server-status-badge {
+    font-size: 0.7rem;
+    font-weight: 600;
+    padding: 0.25rem 0.5rem;
+    border-radius: 9999px;
+    text-transform: uppercase;
+    color: white;
+}
+
+.server-status-badge.enabled {
+    background-color: #10b981;
+}
+
+.server-status-badge.disabled {
+    background-color: #f59e0b;
+}
+
+.server-status-badge.backup {
+    background-color: #6366f1;
+}
+
+.modal-status-badge {
+    position: absolute;
+    right: 3rem;
+    top: 1.25rem;
+}
+
+.server-actions {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.action-btn {
+    font-size: 0.8rem;
+    padding: 0.35rem 0.6rem;
+    border-radius: 4px;
+    border: none;
+    cursor: pointer;
+    font-weight: 500;
+    transition: all 0.2s;
+}
+
+.test-btn {
+    background-color: #4299e1;
+    border-color: #3182ce;
+}
+
+.test-btn:hover {
+    background-color: #3182ce;
+}
+
+.modal-footer .test-btn {
+    margin-right: 10px;
+}
+
+.enable-btn {
+    background-color: #48bb78;
+    border-color: #38a169;
+}
+
+.enable-btn:hover {
+    background-color: #059669;
+}
+
+.disable-btn {
+    background-color: #f59e0b;
+    color: white;
+}
+
+.disable-btn:hover {
+    background-color: #d97706;
+}
+
+.view-btn {
+    background-color: #3b82f6;
+    color: white;
+}
+
+.view-btn:hover {
+    background-color: #2563eb;
+}
+
+.edit-btn {
+    background-color: #8b5cf6;
+    color: white;
+}
+
+.edit-btn:hover {
+    background-color: #7c3aed;
+}
+
+.delete-btn {
+    background-color: #ef4444;
+    color: white;
+}
+
+.delete-btn:hover {
+    background-color: #dc2626;
+}
+
+.server-details {
+    margin-top: 1rem;
+}
+
+.server-info {
+    font-size: 0.9rem;
+}
+
+.info-row {
+    display: flex;
+    margin-bottom: 0.5rem;
+    color: #4b5563;
+}
+
+.info-label {
+    font-weight: 500;
+    width: 110px;
+    flex-shrink: 0;
+}
+
+.info-value {
+    color: #1e293b;
+    word-break: break-word;
+}
+
+.server-actions-bar {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+.server-config-preview {
+    background-color: #f8fafc;
+    border-radius: 6px;
+    padding: 1rem;
+    font-family: monospace;
+    font-size: 0.9rem;
+    white-space: pre-wrap;
+    overflow-x: auto;
+    color: #334155;
+    max-height: 60vh;
+    overflow-y: auto;
+    border: 1px solid #e2e8f0;
+}
+
+.create-server-content {
+    text-align: center;
+}
+
+.create-server-icon {
+    font-size: 2rem;
+    font-weight: bold;
+    margin-bottom: 0.5rem;
+    display: block;
+}
+
+.create-server-content h3 {
+    margin: 0 0 0.5rem;
+    font-size: 1.25rem;
+}
+
+.create-server-content p {
+    margin: 0;
+    font-size: 0.875rem;
+    opacity: 0.8;
+}
+
+/* Dynamic server styles */
+.dynamic-server {
+    background-color: rgba(241, 245, 249, 0.7);
+    font-style: italic;
+}
+
+.dynamic-label {
+    font-size: 0.8rem;
+    color: #64748b;
+    font-style: italic;
+    background-color: #e2e8f0;
+    border-radius: 4px;
+    padding: 1px 5px;
+    margin-left: 5px;
+    display: inline-block;
+    font-weight: normal;
+}
+
+/* 日志分析页面样式 */
+.logs-page {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+.logs-container {
+    display: flex;
+    flex: 1;
+    margin: 1rem 0;
+    border: 1px solid #e2e8f0;
+    border-radius: 0.5rem;
+    overflow: hidden;
+    background-color: #fff;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+/* 左侧文件列表 */
+.logs-sidebar {
+    width: 300px;
+    border-right: 1px solid #e2e8f0;
+    display: flex;
+    flex-direction: column;
+    background-color: #f8fafc;
+}
+
+.logs-sidebar-header {
+    padding: 1rem;
+    border-bottom: 1px solid #e2e8f0;
+    background-color: #f1f5f9;
+}
+
+.logs-sidebar-header h3 {
+    margin: 0;
+    font-size: 1.1rem;
+    color: #334155;
+}
+
+.logs-file-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    overflow-y: auto;
+    flex: 1;
+}
+
+.logs-file-list li {
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid #e2e8f0;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.logs-file-list li:hover {
+    background-color: #f1f5f9;
+}
+
+.logs-file-list li.active {
+    background-color: #e0f2fe;
+    border-left: 3px solid #3b82f6;
+}
+
+.log-file-name {
+    font-weight: 500;
+    margin-bottom: 0.25rem;
+    color: #334155;
+    word-break: break-all;
+}
+
+.log-file-info {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.8rem;
+    color: #64748b;
+}
+
+/* 右侧内容区域 */
+.logs-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.logs-placeholder {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: #64748b;
+    padding: 2rem;
+}
+
+.logs-placeholder-icon {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+    opacity: 0.5;
+}
+
+.logs-viewer {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+/* 工具栏 */
+.logs-toolbar {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.75rem;
+    border-bottom: 1px solid #e2e8f0;
+    background-color: #f8fafc;
+}
+
+.logs-search {
+    display: flex;
+    gap: 0.5rem;
+    flex: 1;
+}
+
+.logs-search input {
+    flex: 1;
+    padding: 0.5rem;
+    border: 1px solid #cbd5e1;
+    border-radius: 0.25rem;
+    font-size: 0.9rem;
+}
+
+.logs-search button {
+    padding: 0.5rem 1rem;
+    border: none;
+    border-radius: 0.25rem;
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: background-color 0.2s;
+}
+
+.logs-search .search-btn {
+    background-color: #3b82f6;
+    color: white;
+}
+
+.logs-search .search-btn:hover {
+    background-color: #2563eb;
+}
+
+.logs-search .clear-btn {
+    background-color: #e2e8f0;
+    color: #334155;
+}
+
+.logs-search .clear-btn:hover {
+    background-color: #cbd5e1;
+}
+
+.logs-content-view {
+    flex: 1;
+    overflow-y: auto;
+    padding: 0.5rem;
+    background-color: #1e293b;
+    color: #f8fafc;
+    font-family: 'Fira Code', monospace;
+}
+
+.logs-content-lines {
+    white-space: pre-wrap;
+    word-break: break-all;
+    font-size: 0.9rem;
+    line-height: 1.5;
+}
+
+.log-line {
+    margin: 0;
+    padding: 0.25rem 0.5rem;
+    border-bottom: 1px solid #334155;
+}
+
+/* 分页控件 */
+.logs-pagination {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.75rem;
+    border-top: 1px solid #e2e8f0;
+    background-color: #f8fafc;
+}
+
+.pagination-btn {
+    padding: 0.5rem 0.75rem;
+    border: 1px solid #cbd5e1;
+    border-radius: 0.25rem;
+    background-color: white;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.pagination-btn:hover:not(:disabled) {
+    background-color: #f1f5f9;
+}
+
+.pagination-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.pagination-info {
+    font-size: 0.9rem;
+    color: #64748b;
+}
+
+/* 实时分析状态 */
+.realtime-status-section,
+.recent-reports-section {
+    margin-top: 1.5rem;
+    padding: 1rem;
+    border-radius: 0.5rem;
+    background-color: white;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.realtime-status-section h3,
+.recent-reports-section h3 {
+    margin-top: 0;
+    margin-bottom: 1rem;
+    color: #334155;
+    font-size: 1.2rem;
+}
+
+.realtime-status-list,
+.recent-reports-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 1rem;
+}
+
+.realtime-status-item,
+.recent-report-item {
+    padding: 1rem;
+    border: 1px solid #e2e8f0;
+    border-radius: 0.5rem;
+    background-color: #f8fafc;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.realtime-status-info,
+.report-info {
+    flex: 1;
+}
+
+.realtime-file,
+.report-file {
+    font-weight: 500;
+    margin-bottom: 0.25rem;
+    color: #334155;
+}
+
+.realtime-uptime,
+.report-time {
+    font-size: 0.8rem;
+    color: #64748b;
+}
+
+.realtime-status-actions,
+.report-actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.view-report-btn {
+    padding: 0.5rem 1rem;
+    background-color: #3b82f6;
+    color: white;
+    border: none;
+    border-radius: 0.25rem;
+    cursor: pointer;
+    text-decoration: none;
+    font-size: 0.9rem;
+    transition: background-color 0.2s;
+}
+
+.view-report-btn:hover {
+    background-color: #2563eb;
+}
+
+.stop-btn {
+    padding: 0.5rem 1rem;
+    background-color: #ef4444;
+    color: white;
+    border: none;
+    border-radius: 0.25rem;
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: background-color 0.2s;
+}
+
+.stop-btn:hover {
+    background-color: #dc2626;
+}
+
+/* 报告页面样式 */
+.reports-page {
+    padding: 20px;
+}
+
+.grouped-reports-section {
+    margin-top: 20px;
+}
+
+.global-actions {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.report-group {
+    margin-bottom: 15px;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.report-group-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 15px;
+    background-color: #f8fafc;
+    border-bottom: 1px solid #e2e8f0;
+    cursor: pointer;
+}
+
+.report-group-header:hover {
+    background-color: #f1f5f9;
+}
+
+.group-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 500;
+}
+
+.group-toggle {
+    font-size: 12px;
+    color: #64748b;
+}
+
+.group-name {
+    font-size: 16px;
+    color: #1e293b;
+}
+
+.group-count {
+    font-size: 14px;
+    color: #64748b;
+}
+
+.group-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.btn-sm {
+    padding: 4px 8px;
+    font-size: 12px;
+}
+
+.report-group-content {
+    background-color: #fff;
+    padding-left: 20px;
+}
+
+.report-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 15px;
+    border-bottom: 1px solid #e2e8f0;
+    position: relative;
+}
+
+.report-item:before {
+    content: '';
+    position: absolute;
+    left: -10px;
+    top: 0;
+    height: 100%;
+    width: 2px;
+    background-color: #e2e8f0;
+}
+
+.report-item:last-child {
+    border-bottom: none;
+}
+
+.report-item:last-child:before {
+    height: 50%;
+}
+
+.report-name {
+    font-size: 14px;
+    font-weight: 500;
+    color: #334155;
+}
+
+.report-iframe {
+    width: 100%;
+    height: 500px;
+    border: none;
+}
+
+/* 设置页面样式 */
+.settings-card {
+    background-color: var(--card-background);
+    border-radius: 0.5rem;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.settings-card h3 {
+    margin-top: 0;
+    margin-bottom: 0.5rem;
+    font-size: 1.25rem;
+    color: var(--text-color);
+}
+
+.settings-card p {
+    color: var(--text-secondary);
+    margin-bottom: 1.5rem;
+}
+
+.settings-form {
+    margin-top: 1.5rem;
+}
+
+.form-actions {
+    margin-top: 1.5rem;
+    display: flex;
+    gap: 0.5rem;
+}
+
+#logs-dir,
+#reports-dir {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid var(--border-color);
+    border-radius: 0.25rem;
+    background-color: var(--input-background);
+    color: var(--text-color);
+    font-family: var(--font-mono);
+    transition: border-color 0.2s;
+}
+
+#logs-dir:focus,
+#reports-dir:focus {
+    border-color: var(--primary-color);
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+}
+
+/* 响应式设计 */
+@media (max-width: 1200px) {
+    .upstreams-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .servers-grid {
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    }
+}
+
+@media (max-width: 900px) {
+    .upstreams-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 768px) {
+    .logs-container {
+        flex-direction: column;
+    }
+
+    .logs-sidebar {
+        width: 100%;
+        border-right: none;
+        border-bottom: 1px solid #e2e8f0;
+        max-height: 300px;
+    }
+
+    .logs-toolbar {
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .servers-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .status-summary {
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    }
+
+    .realtime-status-list,
+    .recent-reports-list {
+        grid-template-columns: 1fr;
+    }
+
+    .status-overview {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .status-card {
+        padding: 1rem;
+    }
+
+    .status-value {
+        font-size: 1.6rem;
+    }
+
+    .charts-grid {
+        grid-template-columns: 1fr;
+        gap: 1.2rem;
+    }
+
+    .chart-container {
+        height: 250px;
+        padding: 1rem;
+    }
+
+    .chart-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.8rem;
+        margin-bottom: 0.8rem;
+    }
+
+    .chart-container h3 {
+        font-size: 1rem;
+    }
+
+    .chart-legend {
+        gap: 1rem;
+        flex-wrap: wrap;
+    }
+
+    .legend-item {
+        font-size: 0.8rem;
+    }
+
+    .controls-content-vertical {
+        gap: 0.3rem;
+    }
+
+    .controls-row {
+        flex-direction: column;
+        gap: 0.5rem;
+        align-items: stretch;
+    }
+}
+
+@media (max-width: 600px) {
+    .upstream-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
+    }
+
+    .server-table th,
+    .server-table td {
+        padding: 0.4rem 0.5rem;
+        font-size: 0.8rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .status-overview {
+        grid-template-columns: 1fr;
+    }
+
+    .charts-grid {
+        gap: 1rem;
+    }
+
+    .chart-container {
+        padding: 1rem;
+    }
+}

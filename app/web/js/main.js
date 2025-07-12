@@ -130,18 +130,21 @@ const app = createApp({
         // 页面切换处理
         const handlePageChange = async (newPage) => {
             console.log('Changing page to:', newPage);
+
+            // 更新当前页面
             currentPage.value = newPage;
             localStorage.setItem('RestyPanel_currentPage', newPage);
 
             // 根据页面类型调用对应管理器的初始化方法
+            // 停止自动刷新
+            upstreamsManager.stopStatusRefresh();
+            statusManager.stopAutoRefresh();
             await nextTick();
             switch (newPage) {
                 case 'status':
                     statusManager.initStatusPage();
-                    upstreamsManager.stopStatusRefresh();
                     break;
                 case 'upstreams':
-                    statusManager.stopAutoRefresh();
                     upstreamsManager.init();
                     break;
                 case 'servers':
@@ -393,7 +396,7 @@ const app = createApp({
             console.log('页面渲染时的 statusManager.statusData.value:', statusManager.statusData.value);
             return '';
         };
-        
+
         // 返回响应式数据和方法
         return {
             // 调试函数

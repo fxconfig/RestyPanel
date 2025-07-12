@@ -12,7 +12,7 @@
 
 class ServersManager {
     constructor() {
-    // 使用Vue的响应式API
+        // 使用Vue的响应式API
         this.isLoading = Vue.ref(false);
         this.isSaving = Vue.ref(false);
         this.isTesting = Vue.ref(false);
@@ -74,7 +74,7 @@ class ServersManager {
         try {
             this.isLoading.value = true;
             const response = await api.get('/servers');
-            
+
             // 处理服务器列表数据
             if (response.data.data) {
                 // 处理服务器列表
@@ -89,7 +89,7 @@ class ServersManager {
                     console.warn('Server items missing or not an array in API response');
                     this.servers.value = [];
                 }
-                
+
                 // 更新状态摘要
                 if (response.data.data.status_summary) {
                     this.summary.total = response.data.data.status_summary.total || 0;
@@ -104,13 +104,13 @@ class ServersManager {
                         else if (server.status === 'disabled') disabled++;
                         else if (server.status === 'backup') backup++;
                     });
-                    
+
                     this.summary.total = this.servers.value.length;
                     this.summary.enabled = enabled;
                     this.summary.disabled = disabled;
                     this.summary.backup = backup;
                 }
-                
+
                 this.lastUpdateTime.value = new Date();
             } else {
                 console.warn('Data missing in API response');
@@ -163,7 +163,7 @@ class ServersManager {
 
             this.currentServer.value = serverData;
             this.showEditModal.value = true;
-            
+
             // Initialize editor in the next tick after DOM is updated
             Vue.nextTick(this.initEditor);
         } catch (error) {
@@ -201,7 +201,7 @@ class ServersManager {
         try {
             this.isLoading.value = true;
             const response = await api.get(`/servers/${serverName}`);
-            
+
             if (response && response.data && response.data.code === 200 && response.data.data) {
                 this.isEditing.value = true;
                 this.editForm.value = {
@@ -268,7 +268,7 @@ class ServersManager {
             this.editError.value = ''; // Clear previous errors
             this.showTestButton.value = false; // Hide test button until success
             let response;
-            
+
             if (this.isEditing.value) {
                 // 更新现有服务器
                 this.editForm.value.content = this.editorInstance.getValue(); // Get latest content
@@ -286,7 +286,7 @@ class ServersManager {
                     }
                 });
             }
-            
+
             if (response && response.data && (response.data.code === 200 || response.data.code === 201)) {
                 NotificationManager.show('success', response.data.message || 'Server saved successfully');
                 this.refreshServerList();
@@ -294,6 +294,11 @@ class ServersManager {
                 this.showEnableButton.value = false;
                 if (!this.isEditing.value) {
                     this.isEditing.value = true;
+                }
+
+                // 如果有返回的服务器数据，更新当前服务器信息
+                if (response.data.data) {
+                    currentServer.value = response.data.data;
                 }
             } else if (response) {
                 console.error('API error when saving server:', response);
@@ -317,7 +322,7 @@ class ServersManager {
         try {
             this.isLoading.value = true;
             const response = await api.get(`/servers/${serverName}`);
-            
+
             if (response && response.data && response.data.code === 200 && response.data.data) {
                 this.currentServer.value = response.data.data;
                 this.showViewModal.value = true;
@@ -370,11 +375,11 @@ class ServersManager {
     async deleteServer(serverNameToDelete) {
         const serverName = serverNameToDelete || this.deleteTarget.value;
         if (!serverName) return;
-        
+
         try {
             this.isLoading.value = true;
             const response = await api.delete(`/servers/${serverName}`);
-            
+
             if (response && response.data && response.data.code === 200) {
                 NotificationManager.show('success', response.data.message || 'Server configuration deleted successfully');
                 this.refreshServerList();
@@ -410,9 +415,9 @@ class ServersManager {
             if (serverIndex >= 0) {
                 this.servers.value[serverIndex].isProcessing = true;
             }
-            
+
             const response = await api.post(`/servers/${serverName}/action?action=test`);
-            
+
             if (response && response.data && response.data.code === 200) {
                 NotificationManager.show('success', response.data.message || 'Test passed');
                 this.showTestButton.value = false;
@@ -421,14 +426,17 @@ class ServersManager {
                 console.error('API error when testing server:', response);
                 let errorMsg = response.data?.message || '服务器返回错误';
                 NotificationManager.show('error', 'Server configuration test failed: ' + errorMsg);
+                editError.value = errorMsg;
             } else {
                 console.error('Empty API response when testing server');
                 NotificationManager.show('error', 'Server configuration test failed: Empty response');
+                editError.value = 'Empty response from server';
             }
         } catch (error) {
             console.error('Error testing server:', error);
             let errorMsg = error.message || '网络连接错误';
             NotificationManager.show('error', 'Failed to test server: ' + errorMsg);
+            editError.value = errorMsg;
         } finally {
             this.isTesting.value = false;
             // Un-mark server in the main list
@@ -444,9 +452,9 @@ class ServersManager {
         try {
             const serverIndex = this.servers.value.findIndex(s => s.name === serverName);
             if (serverIndex >= 0) this.servers.value[serverIndex].isProcessing = true;
-            
+
             const response = await api.post(`/servers/${serverName}/action?action=enable`);
-            
+
             if (response && response.data && response.data.code === 200) {
                 NotificationManager.show('success', response.data.message || 'Server enabled');
                 await this.refreshServerList();
@@ -460,7 +468,7 @@ class ServersManager {
             if (serverIndex >= 0) this.servers.value[serverIndex].isProcessing = false;
         }
     }
-    
+
     async disableServer(serverName) {
         if (!serverName) return;
         try {
@@ -519,9 +527,11 @@ class ServersManager {
             this.editorInstance.on('change', () => {
                 this.editForm.value.content = this.editorInstance.getValue();
             });
+        } else {
+            console.error('Server config editor textarea not found');
         }
     }
-    
+
     /**
      * 初始化只读的 CodeMirror 查看器
      */
@@ -548,12 +558,12 @@ class ServersManager {
         if (!server) {
             return 'N/A';
         }
-        
+
         // 如果API已经提供了server_name，直接使用
         if (server.server_name) {
             return server.server_name;
         }
-        
+
         // 尝试从内容中提取server_name指令
         if (server.content) {
             const match = server.content.match(/server_name\s+([^;]+);/);

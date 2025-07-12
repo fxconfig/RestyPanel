@@ -518,15 +518,9 @@ body {
 
 /* 响应式设计 */
 @media (max-width: 1200px) {
-    .status-overview {
-        grid-template-columns: repeat(3, minmax(160px, 1fr));
-    }
 }
 
 @media (max-width: 900px) {
-    .status-overview {
-        grid-template-columns: repeat(2, minmax(150px, 1fr));
-    }
 }
 
 @media (max-width: 768px) {
@@ -606,12 +600,4 @@ body {
 }
 
 @media (max-width: 480px) {
-    .feature-list {
-        flex-direction: column;
-        align-items: center;
-    }
-
-    .feature-tag {
-        font-size: 0.7rem;
-    }
 }

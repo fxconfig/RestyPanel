@@ -213,7 +213,6 @@
                         </div>
 
                         <div class="status-card controls-card">
-                            <h4>Controls</h4>
                             <div class="status-delta">
                                 <div class="controls-row">
                                     <label class="auto-refresh-label">
@@ -364,7 +363,7 @@
                             :class="{ 'disabled': !up.enable }">
                             <div class="upstream-header">
                                 <div class="upstream-title">
-                                    <h3>{{ up.name }}</h3>
+                                    <h3>{{ up.name }} </h3>
                                     <span v-if="!up.hasCheckers" class="checker-status"
                                         @click="upstreamsManager.openHealthCheckerModal(up.name)">
                                         ⚠️ NO Health Checker
@@ -405,11 +404,14 @@
                             <table class="server-table">
                                 <tbody>
                                     <tr v-for="srv in up.servers" :key="srv.address" :class="{'dynamic-server': srv.isDynamic}">
-                                        <td>{{ srv.address }} <span v-if="srv.isDynamic" class="dynamic-label"
-                                                title="Dynamic server detected by health check but not in configuration">(dynamic)</span></td>
-                                        <td v-if="!srv.isDynamic">{{ srv.weight ?? '--' }}</td>
-                                        <td v-else>--</td>
                                         <td>
+                                            {{ srv.address }}
+                                            <span v-if="!srv.isDynamic && srv.weight" class="server-weight">weight={{
+                                                srv.weight }}</span>
+                                            <span v-if="srv.isDynamic" class="dynamic-label"
+                                                title="Dynamic server detected by health check but not in configuration">(dynamic)</span>
+                                        </td>
+                                        <td class="status-cell">
                                             <span :class="['status-badge', 
                                                 srv.status === 'UP' ? 'up' : 
                                                 srv.status === 'DOWN' ? 'down' : 
@@ -417,23 +419,19 @@
                                                 {{ srv.status }}
                                             </span>
                                         </td>
-                                        <td v-if="!srv.isDynamic">
-                                            <label class="toggle-switch"
-                                                title="Enable/disable server">
+                                        <td class="action-cell" v-if="!srv.isDynamic">
+                                            <label class="toggle-switch" :title="srv.enable ? 'Enabled' : 'Disabled'">
                                                 <input type="checkbox" :checked="srv.enable"
                                                     @change="upstreamsManager.toggleServer(up.name, srv.address, $event.target.checked)"
                                                     :disabled="srv.isToggling">
                                                 <span class="toggle-slider"></span>
                                             </label>
-                                        </td>
-                                        <td v-else>--</td>
-                                        <td v-if="!srv.isDynamic">
                                             <button class="delete-server-btn"
-                                                @click="upstreamsManager.confirmDeleteServer(up.name, srv.address)">
+                                                @click="upstreamsManager.confirmDeleteServer(up.name, srv.address)"
+                                                title="Delete server">
                                                 ×
                                             </button>
                                         </td>
-                                        <td v-else>--</td>
                                     </tr>
                                 </tbody>
                             </table>
@@ -569,67 +567,6 @@
                         </div>
                     </div>
 
-                    <!-- 创建/编辑服务器模态框 -->
-                    <div v-if="serversManager.showEditModal.value" class="modal-overlay"
-                        @click="serversManager.closeEditModal()">
-                        <div class="modal-content large-modal" @click.stop>
-                            <div class="modal-header">
-                                <h3>{{ serversManager.getModalTitle() }}</h3>
-                                <div class="modal-header-actions">
-                                    <button @click="serversManager.closeEditModal()"
-                                        class="btn-secondary">Cancel</button>
-
-                                    <button v-if="serversManager.showSaveButton.value"
-                                        @click="serversManager.saveServer()" :disabled="serversManager.isSaving.value"
-                                        class="btn-primary">
-                                        <span v-if="serversManager.isSaving.value">Saving...</span>
-                                        <span v-else>Save</span>
-                                    </button>
-
-                                    <button v-if="serversManager.showTestButton.value"
-                                        @click="serversManager.testServer()" class="btn-secondary test-btn"
-                                        :disabled="serversManager.isSaving.value || serversManager.isTesting.value">
-                                        <span v-if="serversManager.isTesting.value">Testing...</span>
-                                        <span v-else>Test</span>
-                                    </button>
-
-                                    <button v-if="serversManager.showEnableButton.value"
-                                        @click="serversManager.enableServerFromModal()" class="btn-primary enable-btn">
-                                        Enable
-                                    </button>
-
-                                    <button v-if="serversManager.showDisableButton.value"
-                                        @click="serversManager.disableServerFromModal()" class="action-btn disable-btn">
-                                        Disable
-                                    </button>
-                                </div>
-                                <button class="modal-close-btn" @click="serversManager.closeEditModal()">×</button>
-                            </div>
-                            <div class="modal-body">
-                                <div class="form-group" v-if="!serversManager.isEditing.value">
-                                    <label>Server Name:</label>
-                                    <input type="text" v-model="serversManager.editForm.value.name" class="form-input"
-                                        placeholder="example">
-                                    <small class="form-help">Unique identifier for this server configuration</small>
-                                </div>
-                                <div class="form-group">
-                                    <label>Configuration:</label>
-                                    <textarea id="server-config-editor" v-model="serversManager.editForm.value.content"
-                                        class="config-textarea code-editor" rows="20" placeholder="server {
-    listen 80;
-    server_name example.com;
-    
-    location / {
-        return 200 'Hello World';
-    }
-}"></textarea>
-                                </div>
-                                <div v-if="serversManager.editError.value" class="error-message">
-                                    {{ serversManager.editError.value }}
-                                </div>
-                            </div>
-                        </div>
-                    </div>
 
 
                 </div>
@@ -1137,6 +1074,66 @@
                         @click="confirmDialog.confirm()">{{ confirmDialog.confirmText }}</button>
                 </div>
             </div>
+        </div>
+
+        <!-- 创建/编辑服务器模态框 -->
+        <div v-if="serversManager.showEditModal.value" class="modal-overlay" @click="serversManager.closeEditModal()">
+            <div class="modal-content large-modal" @click.stop>
+                <div class="modal-header">
+                    <h3>{{ serversManager.getModalTitle() }}</h3>
+                    <div class="modal-header-actions">
+                        <button @click="serversManager.closeEditModal()" class="btn-secondary">Cancel</button>
+        
+                        <button v-if="serversManager.showSaveButton.value" @click="serversManager.saveServer()"
+                            :disabled="serversManager.isSaving.value" class="btn-primary">
+                            <span v-if="serversManager.isSaving.value">Saving...</span>
+                            <span v-else>Save</span>
+                        </button>
+        
+                        <button v-if="serversManager.showTestButton.value" @click="serversManager.testServer()"
+                            class="btn-secondary test-btn"
+                            :disabled="serversManager.isSaving.value || serversManager.isTesting.value">
+                            <span v-if="serversManager.isTesting.value">Testing...</span>
+                            <span v-else>Test</span>
+                        </button>
+        
+                        <button v-if="serversManager.showEnableButton.value" @click="serversManager.enableServerFromModal()"
+                            class="btn-primary enable-btn">
+                            Enable
+                        </button>
+        
+                        <button v-if="serversManager.showDisableButton.value" @click="serversManager.disableServerFromModal()"
+                            class="action-btn disable-btn">
+                            Disable
+                        </button>
+                    </div>
+                    <button class="modal-close-btn" @click="serversManager.closeEditModal()">×</button>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group" v-if="!serversManager.isEditing.value">
+                        <label>Server Name:</label>
+                        <input type="text" v-model="serversManager.editForm.value.name" class="form-input"
+                            placeholder="example">
+                        <small class="form-help">Unique identifier for this server configuration</small>
+                    </div>
+                    <div class="form-group">
+                        <label>Configuration:</label>
+                        <textarea id="server-config-editor" v-model="serversManager.editForm.value.content"
+                            class="config-textarea code-editor" rows="20" placeholder="server {
+                                                    listen 80;
+                                                    server_name example.com;
+                                                    
+                                                    location / {
+                                                        return 200 'Hello World';
+                                                    }
+                                                }"></textarea>
+                    </div>
+                    <div v-if="serversManager.editError.value" class="error-message">
+                        {{ serversManager.editError.value }}
+                    </div>
+                </div>
+            </div>
+        
         </div>
 
     </div> <!-- end of #app -->

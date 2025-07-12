@@ -298,7 +298,7 @@ class ServersManager {
 
                 // 如果有返回的服务器数据，更新当前服务器信息
                 if (response.data.data) {
-                    currentServer.value = response.data.data;
+                    this.currentServer.value = response.data.data;
                 }
             } else if (response) {
                 console.error('API error when saving server:', response);
@@ -426,17 +426,17 @@ class ServersManager {
                 console.error('API error when testing server:', response);
                 let errorMsg = response.data?.message || '服务器返回错误';
                 NotificationManager.show('error', 'Server configuration test failed: ' + errorMsg);
-                editError.value = errorMsg;
+                this.editError.value = errorMsg;
             } else {
                 console.error('Empty API response when testing server');
                 NotificationManager.show('error', 'Server configuration test failed: Empty response');
-                editError.value = 'Empty response from server';
+                this.editError.value = 'Empty response from server';
             }
         } catch (error) {
             console.error('Error testing server:', error);
             let errorMsg = error.message || '网络连接错误';
             NotificationManager.show('error', 'Failed to test server: ' + errorMsg);
-            editError.value = errorMsg;
+            this.editError.value = errorMsg;
         } finally {
             this.isTesting.value = false;
             // Un-mark server in the main list

@@ -257,7 +257,8 @@ function _M.delete_report(report_name)
     report_name = sanitize_filename(report_name)
     if not report_name then return false, "Invalid report name" end
     
-    if string.sub(report_name, -5) ~= ".html" then
+    -- Only add .html extension if not already present
+    if not string.match(report_name, "%.html$") then
         report_name = report_name .. ".html"
     end
     

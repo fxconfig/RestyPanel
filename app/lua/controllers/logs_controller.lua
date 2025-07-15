@@ -115,7 +115,7 @@ function _M.delete_report(context)
         return context.response.error("Missing report name parameter", 400)
     end
     
-    local success, err = logs_service.delete_report(report_name .. ".html")
+    local success, err = logs_service.delete_report(report_name)
     
     if not success then
         return context.response.error("Failed to delete report: " .. (err or "unknown error"), 500)

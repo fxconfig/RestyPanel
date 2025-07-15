@@ -231,7 +231,9 @@ function _M.get_reports()
     for _, file in ipairs(files) do
         if string.match(file, "%.html$") then
             local id = file:match("^(.+)%.html$")
-            local full_path = REPORTS_DIR .. "/" .. file
+            -- 确保路径不包含多余斜杠
+            local path_separator = string.sub(REPORTS_DIR, -1) == "/" and "" or "/"
+            local full_path = REPORTS_DIR .. path_separator .. file
             local stat = util.file_stat(full_path)
                         
             table.insert(reports, {

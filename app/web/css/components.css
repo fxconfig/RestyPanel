@@ -135,6 +135,27 @@ components.css 文件是组件样式文件，包含可复用组件和控件样�
     background: #cbd5e0;
 }
 
+.btn-danger {
+    background: #e53e3e;
+    color: white;
+    border: none;
+    padding: 0.7rem 1.5rem;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    white-space: nowrap;
+}
+
+.btn-danger:hover:not(:disabled) {
+    background: #c53030;
+}
+
+.btn-danger:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
 .btn-primary {
     background: #667eea;
     color: white;
@@ -445,6 +466,9 @@ components.css 文件是组件样式文件，包含可复用组件和控件样�
     align-items: center;
 }
 
+.ml-2 {
+    margin-left: 0.5rem;
+}
 /* 表单控件 */
 .form-input {
     width: 100%;

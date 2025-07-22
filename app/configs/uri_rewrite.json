@@ -1,1 +1,0 @@
-{"rules":[{"matcher":"demo_RestyPanel_short_uri","to_uri":"\/RestyPanel\/$1","updated_at":0,"created_at":0,"replace_re":"^\/vn\/(.*)","enable":true}],"enable":true}

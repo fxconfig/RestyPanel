@@ -1,1 +1,0 @@
-{"enable":true,"base_uri":"\/asd1239axasd","dashboard_host":"","api_mode":true,"paths":{"reports_dir":"\/app\/web\/reports\/","logs_dir":"\/var\/log\/nginx\/"},"users":[{"password":"RestyPanel","user":"RestyPanel"}],"jwt_expires":86400,"jwt_secret":"RestyPanel-JWT-Secret-Key-2024","last_updated":0}

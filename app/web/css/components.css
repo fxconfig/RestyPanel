@@ -882,6 +882,22 @@ components.css 文件是组件样式文件，包含可复用组件和控件样�
     border-radius: 4px;
     padding: 2px 6px;
 }
+/* 合并的操作单元格 */
+.server-table .combined-action-cell {
+    text-align: right;
+    padding-right: 10px;
+}
+
+.server-table .combined-action-cell .cell-content {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 12px;
+}
+
+.server-table .status-badge {
+    margin-right: 6px;
+}
 /* 表格中的状态单元格和操作单元格右对齐 */
 .server-table .status-cell {
     text-align: right;

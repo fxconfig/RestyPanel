@@ -163,7 +163,8 @@
                                 statusManager.statusData.value.request_all_count || '--' : '--' }}
                             </div>
                             <div class="status-delta">
-                                Success: {{ (statusManager && statusManager.statusData && statusManager.statusData.value) ?
+                                Success: {{ (statusManager && statusManager.statusData &&
+                                statusManager.statusData.value) ?
                                 statusManager.statusData.value.request_success_count || '--' : '--' }}
                             </div>
                         </div>
@@ -192,7 +193,8 @@
                                 formatBytes(statusManager.statusData.value.traffic_read) : '--' }}
                             </div>
                             <div class="status-delta">
-                                Write: {{ (statusManager && statusManager.statusData && statusManager.statusData.value &&
+                                Write: {{ (statusManager && statusManager.statusData && statusManager.statusData.value
+                                &&
                                 statusManager.statusData.value.traffic_write != null) ?
                                 formatBytes(statusManager.statusData.value.traffic_write) : '--' }}
                             </div>
@@ -206,7 +208,8 @@
                                 formatUptime(statusManager.statusData.value.boot_time) : '--' }}
                             </div>
                             <div class="status-delta">
-                                Start at: {{ (statusManager && statusManager.statusData && statusManager.statusData.value &&
+                                Start at: {{ (statusManager && statusManager.statusData &&
+                                statusManager.statusData.value &&
                                 statusManager.statusData.value.boot_time) ?
                                 formatBootTime(statusManager.statusData.value.boot_time) : '--' }}
                             </div>
@@ -220,8 +223,7 @@
                                         <span>Auto Refresh</span>
                                     </label>
                                     <select v-if="statusManager.autoRefresh.value" v-model="statusManager.refreshInterval.value"
-                                        @change="statusManager.updateRefreshInterval()"
-                                        class="interval-select">
+                                        @change="statusManager.updateRefreshInterval()" class="interval-select">
                                         <option value="3">3s</option>
                                         <option value="5">5s</option>
                                         <option value="10">10s</option>
@@ -229,8 +231,7 @@
                                         <option value="30">30s</option>
                                     </select>
                                     <button v-if="!statusManager.autoRefresh.value" @click="statusManager.manualRefresh()"
-                                        :disabled="statusManager.isRefreshing.value"
-                                        class="refresh-btn">
+                                        :disabled="statusManager.isRefreshing.value" class="refresh-btn">
                                         <span v-if="statusManager.isRefreshing.value">Refreshing...</span>
                                         <span v-else>Refresh</span>
                                     </button>
@@ -238,8 +239,7 @@
                                 <div class="controls-row">
                                     <label class="time-window-label">
                                         <span>Time Window: </span>
-                                        <select v-model="statusManager.timeWindow.value" @change="statusManager.setTimeWindow()"
-                                            class="time-window-select">
+                                        <select v-model="statusManager.timeWindow.value" @change="statusManager.setTimeWindow()" class="time-window-select">
                                             <option value="60">1Min</option>
                                             <option value="300">5Mins</option>
                                             <option value="600">10Mins</option>
@@ -411,24 +411,26 @@
                                             <span v-if="srv.isDynamic" class="dynamic-label"
                                                 title="Dynamic server detected by health check but not in configuration">(dynamic)</span>
                                         </td>
-                                        <td class="status-cell">
-                                            <span :class="['status-badge', 
-                                                srv.status === 'UP' ? 'up' : 
-                                                srv.status === 'DOWN' ? 'down' : 
-                                                'unknown']">
-                                                {{ srv.status }}
-                                            </span>
-                                        </td>
-                                        <td class="action-cell" v-if="!srv.isDynamic">
-                                            <label class="toggle-switch" :title="srv.enable ? 'Enabled' : 'Disabled'">
-                                                <input type="checkbox" :checked="srv.enable"
-                                                    @change="upstreamsManager.toggleServer(up.name, srv.address, $event.target.checked)"
-                                                    :disabled="srv.isToggling">
-                                                <span class="toggle-slider"></span>
-                                            </label>
-                                            <button class="delete-server-btn" @click="upstreamsManager.confirmDeleteServer(up.name, srv.address)"
-                                                title="Delete server">×
-                                            </button>
+                                        <td class="combined-action-cell">
+                                            <div class="cell-content">
+                                                <span :class="['status-badge', 
+                                                                                            srv.status === 'UP' ? 'up' : 
+                                                                                            srv.status === 'DOWN' ? 'down' : 
+                                                                                            'unknown']">
+                                                    {{ srv.status }}
+                                                </span>
+                                                <template v-if="!srv.isDynamic">
+                                                    <label class="toggle-switch" :title="srv.enable ? 'Enabled' : 'Disabled'">
+                                                        <input type="checkbox" :checked="srv.enable"
+                                                            @change="upstreamsManager.toggleServer(up.name, srv.address, $event.target.checked)"
+                                                            :disabled="srv.isToggling">
+                                                        <span class="toggle-slider"></span>
+                                                    </label>
+                                                    <button class="delete-server-btn" @click="upstreamsManager.confirmDeleteServer(up.name, srv.address)"
+                                                        title="Delete server">×
+                                                    </button>
+                                                </template>
+                                                </div>
                                         </td>
                                     </tr>
                                 </tbody>
@@ -855,8 +857,7 @@
         </div>
 
         <!-- 展示 upstream.conf 的只读模态框 -->
-        <div v-if="upstreamsManager.showConfModal.value" class="modal-overlay"
-            @mousedown="handleOverlayClick($event)">
+        <div v-if="upstreamsManager.showConfModal.value" class="modal-overlay" @mousedown="handleOverlayClick($event)">
             <div class="modal-content large-modal" @click.stop>
                 <div class="modal-header">
                     <h3>upstream.conf (readonly)</h3>
@@ -1082,25 +1083,25 @@
                     <h3>{{ serversManager.getModalTitle() }}</h3>
                     <div class="modal-header-actions">
                         <button @click="serversManager.closeEditModal()" class="btn-secondary">Cancel</button>
-        
+
                         <button v-if="serversManager.showSaveButton.value" @click="serversManager.saveServer()"
                             :disabled="serversManager.isSaving.value" class="btn-primary">
                             <span v-if="serversManager.isSaving.value">Saving...</span>
                             <span v-else>Save</span>
                         </button>
-        
+
                         <button v-if="serversManager.showTestButton.value" @click="serversManager.testServer()"
                             class="btn-secondary test-btn"
                             :disabled="serversManager.isSaving.value || serversManager.isTesting.value">
                             <span v-if="serversManager.isTesting.value">Testing...</span>
                             <span v-else>Test</span>
                         </button>
-        
+
                         <button v-if="serversManager.showEnableButton.value" @click="serversManager.enableServerFromModal()"
                             class="btn-primary enable-btn">
                             Enable
                         </button>
-        
+
                         <button v-if="serversManager.showDisableButton.value" @click="serversManager.disableServerFromModal()"
                             class="action-btn disable-btn">
                             Disable
@@ -1118,8 +1119,8 @@
                     <div class="form-group">
                         <label>Configuration:</label>
                         <div class="editor-container">
-                        <textarea id="server-config-editor" v-model="serversManager.editForm.value.content"
-                              class="config-textarea code-editor" placeholder="server {
+                            <textarea id="server-config-editor" v-model="serversManager.editForm.value.content" class="config-textarea code-editor"
+                                placeholder="server {
                                                       listen 80;
                                                       server_name example.com;
                                                       
@@ -1134,7 +1135,7 @@
                     </div>
                 </div>
             </div>
-        
+
         </div>
 
     </div> <!-- end of #app -->

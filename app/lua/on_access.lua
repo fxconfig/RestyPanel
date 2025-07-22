@@ -4,7 +4,7 @@ local browser_verify  = require "services.browser_verify"
 local frequency_limit = require "services.frequency_limit"
 
 -- 如果设置了api_mode标志，说明请求已被API location处理，直接返回
-if ngx.var.vn_exec_flag == 'api_mode' then
+if ngx.var.vn_exec_flag and ngx.var.vn_exec_flag== 'api_mode' then
     return
 end
 

@@ -32,3 +32,4 @@ app/configs/
 app/web/reports/
 
 docker-compose.yml
+*.conf

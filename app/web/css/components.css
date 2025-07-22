@@ -235,7 +235,7 @@ components.css 文件是组件样式文件，包含可复用组件和控件样�
     background-color: white;
     border-radius: 8px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-    z-index: 10;
+    z-index: 5000;
     min-width: 150px;
     padding: 0.5rem 0;
     display: flex;
@@ -293,6 +293,64 @@ components.css 文件是组件样式文件，包含可复用组件和控件样�
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
 }
 
+/* Add resizable modal styles */
+.resizable-modal {
+    position: relative;
+    resize: both;
+    overflow: auto;
+    min-width: 600px;
+    min-height: 400px;
+    max-height: 90vh;
+    max-width: 95vw;
+    transition: box-shadow 0.2s ease;
+}
+
+.resizable-modal:hover {
+    box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.4), 0 10px 30px rgba(0, 0, 0, 0.3);
+}
+
+.resize-handle {
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    z-index: 10;
+}
+
+.resize-handle.bottom-right {
+    bottom: 0;
+    right: 0;
+    cursor: nwse-resize;
+    width: 24px;
+    height: 24px;
+    z-index: 20;
+}
+
+.resize-handle.bottom-right::after {
+    content: "";
+    position: absolute;
+    right: 6px;
+    bottom: 6px;
+    width: 12px;
+    height: 12px;
+    border-right: 2px solid #718096;
+    border-bottom: 2px solid #718096;
+    opacity: 0.7;
+}
+
+.resizable-modal:hover .resize-handle.bottom-right::after {
+    opacity: 1;
+    border-right: 2px solid #4a5568;
+    border-bottom: 2px solid #4a5568;
+}
+
+.resizable-modal .modal-body {
+    flex: 1;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    height: calc(100% - 70px);
+    /* 只减去header的高度 */
+}
 .modal-header {
     display: flex;
     align-items: center;
@@ -350,6 +408,10 @@ components.css 文件是组件样式文件，包含可复用组件和控件样�
     width: 90%;
 }
 
+.resizable-modal.large-modal {
+    max-width: none;
+    width: 800px;
+}
 /* 表格样式 */
 .server-table {
     width: 100%;
@@ -509,6 +571,11 @@ components.css 文件是组件样式文件，包含可复用组件和控件样�
     transition: border-color 0.3s ease;
 }
 
+.resizable-modal .config-textarea {
+    height: calc(100% - 50px);
+    /* Adjust for form labels and padding */
+    min-height: 250px;
+}
 .config-textarea:focus {
     outline: none;
     border-color: #667eea;
@@ -747,11 +814,69 @@ components.css 文件是组件样式文件，包含可复用组件和控件样�
     border: 1px solid #4a5568;
 }
 
+/* 编辑器在模态框中的样式 */
+.resizable-modal .CodeMirror {
+    height: 100% !important;
+    width: 100% !important;
+    box-sizing: border-box;
+}
+
+.resizable-modal .form-group:last-child {
+    position: relative;
+}
 .modal-body .CodeMirror {
     height: 400px;
 }
 
+.resizable-modal .modal-body .CodeMirror {
+    height: 100%;
+    min-height: 300px;
+    flex: 1;
+}
 #upstream-config-viewer .CodeMirror,
-#server-config-viewer .CodeMirror {
+#server-config-viewer .CodeMirror,
+#server-config-editor.CodeMirror {
     height: 400px;
+}
+.resizable-modal #server-config-editor.CodeMirror {
+    height: 100%;
+    min-height: 300px;
+    overflow-y: hidden;
+}
+
+.editor-container {
+    flex: 1;
+    position: relative;
+    height: 100%;
+    min-height: 300px;
+    overflow: hidden;
+}
+
+/* 最后更新时间心跳动画 */
+@keyframes heartbeat-bg {
+    0% {
+        background-color: rgba(102, 126, 234, 0);
+    }
+
+    15% {
+        background-color: rgba(102, 126, 234, 0.3);
+    }
+
+    30% {
+        background-color: rgba(102, 126, 234, 0.15);
+    }
+
+    45% {
+        background-color: rgba(102, 126, 234, 0.3);
+    }
+
+    100% {
+        background-color: rgba(102, 126, 234, 0);
+    }
+}
+
+.last-update-time.heartbeat {
+    animation: heartbeat-bg 1.5s ease-in-out;
+    border-radius: 4px;
+    padding: 2px 6px;
 }

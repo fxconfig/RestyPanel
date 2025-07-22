@@ -230,8 +230,22 @@ class UpstreamsManager {
                 });
             });
 
-            // 记录最后更新时间
+            // 记录最后更新时间并添加心跳动画
             this.lastUpdateTime.value = new Date();
+
+            // 为最后更新时间添加心跳动画效果
+            Vue.nextTick(() => {
+                const lastUpdateTimeElement = document.querySelector('.action-bar .last-update-time');
+                if (lastUpdateTimeElement) {
+                    // 添加心跳类
+                    lastUpdateTimeElement.classList.add('heartbeat');
+
+                    // 动画结束后移除类
+                    setTimeout(() => {
+                        lastUpdateTimeElement.classList.remove('heartbeat');
+                    }, 1500); // 与动画时长相匹配
+                }
+            });
 
             return this.data.value;
         } catch (err) {

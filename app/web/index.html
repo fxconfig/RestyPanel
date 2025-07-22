@@ -426,10 +426,8 @@
                                                     :disabled="srv.isToggling">
                                                 <span class="toggle-slider"></span>
                                             </label>
-                                            <button class="delete-server-btn"
-                                                @click="upstreamsManager.confirmDeleteServer(up.name, srv.address)"
-                                                title="Delete server">
-                                                ×
+                                            <button class="delete-server-btn" @click="upstreamsManager.confirmDeleteServer(up.name, srv.address)"
+                                                title="Delete server">×
                                             </button>
                                         </td>
                                     </tr>
@@ -440,7 +438,7 @@
 
                     <!-- 编辑 Upstream 配置模态框 -->
                     <div v-if="upstreamsManager.showEditModal.value" class="modal-overlay"
-                        @click="upstreamsManager.closeEditModal()">
+                        @mousedown="handleOverlayClick($event)">
                         <div class="modal-content" @click.stop>
                             <div class="modal-header">
                                 <h3>{{ upstreamsManager.editingUpstream.value?.name ? 'Edit' : 'Add' }} Upstream
@@ -858,7 +856,7 @@
 
         <!-- 展示 upstream.conf 的只读模态框 -->
         <div v-if="upstreamsManager.showConfModal.value" class="modal-overlay"
-            @click="upstreamsManager.closeShowConfModal()">
+            @mousedown="handleOverlayClick($event)">
             <div class="modal-content large-modal" @click.stop>
                 <div class="modal-header">
                     <h3>upstream.conf (readonly)</h3>
@@ -877,7 +875,7 @@
 
         <!-- 健康检查参数设置模态框 -->
         <div v-if="upstreamsManager.showHealthCheckerModal.value" class="modal-overlay"
-            @click="upstreamsManager.closeHealthCheckerModal()">
+            @mousedown="handleOverlayClick($event)">
             <div class="modal-content" style="max-width:700px;" @click.stop>
                 <div class="modal-header">
                     <h3>Set Health Checker for <b>{{ upstreamsManager.currentEditingUpstream }}</b></h3>
@@ -974,7 +972,7 @@
 
         <!-- 添加服务器模态框 -->
         <div v-if="upstreamsManager.showAddServerModal.value" class="modal-overlay"
-            @click="upstreamsManager.closeAddServerModal()">
+            @mousedown="handleOverlayClick($event)">
             <div class="modal-content" @click.stop>
                 <div class="modal-header">
                     <h3>Add Server to <b>{{ upstreamsManager.currentUpstreamForAddServer.value }}</b></h3>
@@ -1008,7 +1006,7 @@
         </div>
 
         <!-- 日志分析模态框 -->
-        <div v-if="logsManager.showReportModal.value" class="modal-overlay" @click="logsManager.closeAnalyzeModal()">
+        <div v-if="logsManager.showReportModal.value" class="modal-overlay" @mousedown="handleOverlayClick($event)">
             <div class="modal-content" @click.stop>
                 <div class="modal-header">
                     <h3>Analyze Log with GoAccess</h3>
@@ -1058,7 +1056,7 @@
         </div>
 
         <!-- 通用确认模态框 -->
-        <div v-if="confirmDialog.show" class="modal-overlay" @click="confirmDialog.cancel()">
+        <div v-if="confirmDialog.show" class="modal-overlay" @mousedown="handleOverlayClick($event)">
             <div class="modal-content" @click.stop>
                 <div class="modal-header">
                     <h3>{{ confirmDialog.title }}</h3>
@@ -1077,8 +1075,9 @@
         </div>
 
         <!-- 创建/编辑服务器模态框 -->
-        <div v-if="serversManager.showEditModal.value" class="modal-overlay" @click="serversManager.closeEditModal()">
-            <div class="modal-content large-modal" @click.stop>
+        <div v-if="serversManager.showEditModal.value" class="modal-overlay" @mousedown="handleOverlayClick($event)">
+            <div class="modal-content large-modal resizable-modal" @click.stop>
+                <div class="resize-handle bottom-right"></div>
                 <div class="modal-header">
                     <h3>{{ serversManager.getModalTitle() }}</h3>
                     <div class="modal-header-actions">
@@ -1118,15 +1117,17 @@
                     </div>
                     <div class="form-group">
                         <label>Configuration:</label>
+                        <div class="editor-container">
                         <textarea id="server-config-editor" v-model="serversManager.editForm.value.content"
-                            class="config-textarea code-editor" rows="20" placeholder="server {
-                                                    listen 80;
-                                                    server_name example.com;
-                                                    
-                                                    location / {
-                                                        return 200 'Hello World';
-                                                    }
-                                                }"></textarea>
+                              class="config-textarea code-editor" placeholder="server {
+                                                      listen 80;
+                                                      server_name example.com;
+                                                      
+                                                      location / {
+                                                          return 200 'Hello World';
+                                                      }
+                                                  }"></textarea>
+                        </div>
                     </div>
                     <div v-if="serversManager.editError.value" class="error-message">
                         {{ serversManager.editError.value }}

@@ -524,6 +524,11 @@ class ServersManager {
                 lineWrapping: true,
                 readOnly: this.isEditorReadOnly.value
             });
+
+            // 确保编辑器填充空间并解决初始高度问题
+            setTimeout(() => {
+                this.editorInstance.refresh();
+            }, 50);
             this.editorInstance.on('change', () => {
                 this.editForm.value.content = this.editorInstance.getValue();
             });

@@ -279,7 +279,24 @@ body {
 
 /* 表单样式 */
 .form-group {
-    margin-bottom: 1.5rem;
+    margin-bottom: 1.2rem;
+    }
+    
+    /* 添加这部分来让编辑区域填充剩余空间 */
+    .resizable-modal .form-group:last-child {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        margin-bottom: 0;
+        overflow: hidden;
+    }
+    
+    .resizable-modal .form-group:last-child .code-editor,
+    .resizable-modal .form-group:last-child .config-textarea {
+        flex: 1;
+        min-height: 0;
+        height: 100% !important;
+        /* 强制使用100%高度 */
 }
 
 .form-group label {

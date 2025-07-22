@@ -56,17 +56,31 @@ Settings 设置页面
     filter: grayscale(90%);
     box-shadow: none;
     border-color: #e5e7eb;
+    position: relative;
+        z-index: 1;
 }
 
 .upstream-card.disabled:hover {
     transform: none;
     box-shadow: none;
+    z-index: 100;
 }
 
 .upstream-card.disabled .upstream-title h3 {
     color: #9ca3af;
 }
 
+.upstream-card.disabled .dropdown {
+    z-index: 5001;
+}
+
+.upstream-card.disabled:hover .dropdown {
+    z-index: 5002;
+}
+
+.upstream-card.disabled .dropdown-menu {
+    z-index: 10000 !important;
+}
 .upstream-card:hover {
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
@@ -84,6 +98,7 @@ Settings 设置页面
     display: flex;
     align-items: center;
     gap: 0.8rem;
+    padding-left: 0.5rem;
 }
 
 .upstream-title h3 {
@@ -1144,6 +1159,46 @@ Settings 设置页面
     box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
 }
 
+/* 服务器表格操作列样式 */
+.server-table .status-cell {
+    text-align: right;
+    width: 80px;
+    min-width: 80px;
+}
+
+.server-table .action-cell {
+    text-align: right;
+    width: 120px;
+    min-width: 120px;
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 8px;
+}
+
+.server-table .action-cell .toggle-switch {
+    flex-shrink: 0;
+    width: 40px;
+    height: 20px;
+}
+
+.server-table .action-cell .delete-server-btn {
+    flex-shrink: 0;
+    width: 40px;
+    height: 20px;
+    color: #e53e3e;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    line-height: 18px;
+    text-align: center;
+    transition: background-color 0.2s;
+}
+
+.server-table .action-cell .delete-server-btn:hover {
+    background: #ca9a9a;
+}
 /* 响应式设计 */
 @media (max-width: 1200px) {
     .upstreams-grid {

@@ -84,11 +84,7 @@ end
 
 -- 加载配置并设置健康检查
 local config = load_upstream_config()
-if config then
-    setup_health_checks(config)
-else
-    ngx.log(ngx.INFO, "no configuration file found, health checks disabled")
-end
+setup_health_checks(config)
 
 -- 预初始化API系统，避免首次请求时的初始化开销
 local function preload_api_system()
@@ -104,22 +100,9 @@ end
 -- 预加载API系统
 preload_api_system()
 
-local _M = {}
-
-function _M.run()
-    local status = require "services.status"
-    -- 重设状态计数
-    status.reset()
+-- 确保报告目录存在
+local config = require "core.config"
+local reports_dir = config.get_configs().admin.paths.reports_dir or "/app/web/reports/"
+local cmd = "mkdir -p " .. reports_dir .. " && chmod -R 777 " .. reports_dir
+os.execute(cmd)
     
-    -- 确保报告目录存在
-    local config = require "core.config"
-    local reports_dir = config.get_configs().admin.paths.reports_dir or "/app/web/reports/"
-    local cmd = "mkdir -p " .. reports_dir .. " && chmod -R 777 " .. reports_dir
-    os.execute(cmd)
-    
-    -- 可以做一些初始化工作，如检查配置文件存在，重置一些值等
-    -- 该函数在worker进程启动时运行
-    ngx.log(ngx.INFO, "worker initialized at " .. ngx.http_time(ngx.time()))
-end
-
-return _M

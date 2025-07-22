@@ -397,8 +397,41 @@ const app = createApp({
             return '';
         };
 
+        // 模态框覆盖层点击处理函数
+        const handleOverlayClick = (event) => {
+            // 只有当点击事件的目标是覆盖层本身时才关闭模态框
+            // 这样可以防止拖动操作导致模态框关闭
+            if (event.target === event.currentTarget) {
+                // 仅当点击了模态框覆盖层本身时（不是在拖动过程中）才关闭相应的模态框
+                if (serversManager.showEditModal.value) {
+                    serversManager.closeEditModal();
+                }
+                if (upstreamsManager.showEditModal.value) {
+                    upstreamsManager.closeEditModal();
+                }
+                if (upstreamsManager.showConfModal.value) {
+                    upstreamsManager.closeShowConfModal();
+                }
+                if (upstreamsManager.showHealthCheckerModal.value) {
+                    upstreamsManager.closeHealthCheckerModal();
+                }
+                if (upstreamsManager.showAddServerModal.value) {
+                    upstreamsManager.closeAddServerModal();
+                }
+                if (logsManager.showReportModal.value) {
+                    logsManager.closeAnalyzeModal();
+                }
+                if (confirmDialog.show) {
+                    confirmDialog.cancel();
+                }
+            }
+        };
+
         // 返回响应式数据和方法
         return {
+            // 模态框覆盖层点击处理
+            handleOverlayClick,
+
             // 调试函数
             debugStatusData,
 

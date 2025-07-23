@@ -364,6 +364,8 @@
                             <div class="upstream-header">
                                 <div class="upstream-title">
                                     <h3>{{ up.name }} </h3>
+                                </div>
+                                <div class="upstream-status">
                                     <span v-if="!up.hasCheckers" class="checker-status"
                                         @click="upstreamsManager.openHealthCheckerModal(up.name)">
                                         ⚠️ NO Health Checker
@@ -372,8 +374,6 @@
                                         @click="upstreamsManager.openHealthCheckerModal(up.name)">
                                         🔄 checking ...
                                     </span>
-                                </div>
-                                <div class="upstream-status">
                                     <div class="dropdown">
                                         <button @click="upstreamsManager.toggleDropdown(up.name)"
                                             class="dropdown-toggle-btn action-btn" title="Actions">

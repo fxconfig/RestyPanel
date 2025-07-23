@@ -200,6 +200,29 @@ components.css 文件是组件样式文件，包含可复用组件和控件样�
     cursor: not-allowed;
 }
 
+/* upstream卡片标题样式修改 */
+.upstream-status {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.checker-status {
+    cursor: pointer;
+    padding: 5px 10px;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    white-space: nowrap;
+    transition: background-color 0.2s;
+}
+
+.checker-status:hover {
+    background-color: rgba(102, 126, 234, 0.1);
+}
+
+.checker-status.checking {
+    color: #3b82f6;
+}
 /* 下拉菜单 */
 .dropdown {
     position: relative;
@@ -212,10 +235,11 @@ components.css 文件是组件样式文件，包含可复用组件和控件样�
     color: #4338ca;
     border-radius: 6px;
     cursor: pointer;
-    font-size: 1.1rem;
+    font-size: 0.85rem;
     font-weight: 600;
-    width: 34px;
+    padding: 0 10px;
     height: 34px;
+    min-width: 50px;
     display: flex;
     align-items: center;
     justify-content: center;

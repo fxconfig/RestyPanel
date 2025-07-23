@@ -212,7 +212,16 @@ local default_config = {
 --  === 模块化配置管理（由原 config_manager.lua 合并） ===
 local CONFIG_BASE_PATH = "/app/configs"
 local MODULE_DEFAULTS = {
-    admin = require("cjson").decode([[{"base_uri":"/asd1239axasd/api","dashboard_host":"","enable":true,"last_updated":0}]])
+    admin = require("cjson").decode([[{
+        "base_uri": "/asd1239axasd/api",
+        "dashboard_host": "",
+        "enable": true,
+        "last_updated": 0,
+        "paths": {
+            "logs_dir": "/var/log/nginx/",
+            "reports_dir": "/app/web/reports/"
+        }
+    }]])
 }
 
 -- 直接使用默认配置（无需JSON解析）

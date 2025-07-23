@@ -12,9 +12,36 @@ local config = require "core.config"
 
 local _M = {}
 
--- 常量定义
-local LOGS_DIR =  config.get_configs().admin.paths.logs_dir or "/var/log/nginx/"
-local REPORTS_DIR = config.get_configs().admin.paths.reports_dir or "/app/web/reports/"
+-- 常量定义及安全获取配置
+local function safe_get_path(path_key, default_value)
+    local configs = config.get_configs()
+    if configs and configs.admin then
+        if configs.admin.paths and configs.admin.paths[path_key] then
+            return configs.admin.paths[path_key]
+        end
+        
+        -- 如果admin中没有paths配置项，尝试创建默认配置
+        if not configs.admin.paths then
+            configs.admin.paths = {
+                logs_dir = "/var/log/nginx/",
+                reports_dir = "/app/web/reports/"
+            }
+            
+            -- 尝试保存更新的配置
+            pcall(function()
+                config.save_module_config("admin", configs.admin)
+                ngx.log(ngx.NOTICE, "Created default paths in admin config")
+            end)
+            
+            return configs.admin.paths[path_key]
+        end
+    end
+    
+    return default_value
+end
+
+local LOGS_DIR = safe_get_path("logs_dir", "/var/log/nginx/")
+local REPORTS_DIR = safe_get_path("reports_dir", "/app/web/reports/")
 
 -- Base directory for logs - get from config
 -- local LOGS_DIR = config.get_configs().admin.paths.logs_dir or "/var/log/nginx/"

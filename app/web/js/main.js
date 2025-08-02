@@ -19,7 +19,7 @@ const app = createApp({
         // 登录表单
         const loginForm = reactive({
             username: 'RestyPanel',
-            password: 'RestyPanel'
+            password: '1'
         });
 
         // 创建管理器实例

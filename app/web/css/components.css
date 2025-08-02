@@ -369,11 +369,10 @@ components.css 文件是组件样式文件，包含可复用组件和控件样�
 
 .resizable-modal .modal-body {
     flex: 1;
-    overflow: hidden;
+    overflow: auto;
     display: flex;
     flex-direction: column;
-    height: calc(100% - 70px);
-    /* 只减去header的高度 */
+    min-height: 0;
 }
 .modal-header {
     display: flex;
@@ -842,11 +841,15 @@ components.css 文件是组件样式文件，包含可复用组件和控件样�
 
 /* 编辑器在模态框中的样式 */
 .resizable-modal .CodeMirror {
-    height: 100% !important;
+    height: 400px !important;
     width: 100% !important;
     box-sizing: border-box;
 }
 
+.resizable-modal .editor-container .CodeMirror {
+    height: 100% !important;
+    min-height: 300px !important;
+}
 .resizable-modal .form-group:last-child {
     position: relative;
 }
@@ -873,9 +876,8 @@ components.css 文件是组件样式文件，包含可复用组件和控件样�
 .editor-container {
     flex: 1;
     position: relative;
-    height: 100%;
     min-height: 300px;
-    overflow: hidden;
+    overflow: auto;
 }
 
 /* 最后更新时间心跳动画 */

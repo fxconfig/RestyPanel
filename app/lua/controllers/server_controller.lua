@@ -405,7 +405,13 @@ function _M.create(context)
     end
     
     if not content or content == "" then
-        return context.response.error("Server configuration content is required", 400)
+        return context.response.error("Server configuration content is required", 400, {
+            debug_info = {
+                body_type = type(body),
+                body_content = body,
+                extracted_content = content
+            }
+        })
     end
     
     -- 直接写入 backup 文件
@@ -476,7 +482,13 @@ function _M.update(context)
     end
     
     if not content or content == "" then
-        return context.response.error("Server configuration content is required", 400)
+        return context.response.error("Server configuration content is required", 400, {
+            debug_info = {
+                body_type = type(body),
+                body_content = body,
+                extracted_content = content
+            }
+        })
     end
     
     -- 获取所有可能的路径

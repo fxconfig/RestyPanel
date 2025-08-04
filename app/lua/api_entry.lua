@@ -166,8 +166,16 @@ local function create_context(route, params)
                 if success then
                     body_data = parsed_body
                 else
-                    ngx.log(ngx.WARN, "Failed to parse JSON body: ", body_raw)
-                    body_data = {}
+                    -- JSON解析失败，可能是文本内容被错误标记为JSON
+                    -- 对于服务器配置接口，保留原始文本内容
+                    local uri = ngx.ctx.route_path or "/"
+                    if string.match(uri, "/servers/") then
+                        ngx.log(ngx.INFO, "Server config detected with JSON content-type but text content, using raw body")
+                        body_data = body_raw
+                    else
+                        ngx.log(ngx.WARN, "Failed to parse JSON body: ", body_raw)
+                        body_data = {}
+                    end
                 end
             -- 处理文本类型（服务器配置等）
             elseif string.find(content_type, "text/plain", 1, true) or string.find(content_type, "text/html", 1, true) then

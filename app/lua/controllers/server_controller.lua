@@ -134,25 +134,6 @@ local function find_server_file(server_name)
     return nil, nil
 end
 
--- 工具函数：确保服务器只有一个状态文件存在
-local function ensure_single_state_file(server_name, target_state, content)
-    local paths = get_server_paths(server_name)
-    
-    -- 删除所有状态文件
-    for state, path in pairs(paths) do
-        if file_exists(path) then
-            delete_file(path)
-        end
-    end
-    
-    -- 创建目标状态的文件
-    if content then
-        write_file(paths[target_state], content)
-    end
-    
-    return paths[target_state]
-end
-
 -- 工具函数：解析服务器配置文件状态
 local function parse_server_file(filename)
     local base_name = filename:match("^" .. SERVER_CONFIG_PREFIX .. "(.+)$")
@@ -581,7 +562,12 @@ local function handle_test_action(server_name, paths, context)
         return context.response.error("Failed to read backup file", 500)
     end
     
-    -- 创建临时测试文件
+    -- 检查是否已存在 enabled 文件，如果存在则不能进行测试
+    if file_exists(paths.enabled) then
+        return context.response.error("Cannot test backup file while an enabled configuration exists for server: " .. server_name .. ". Please disable the server first.", 409)
+    end
+    
+    -- 创建临时测试文件（使用 .conf 后缀以便 nginx 能够加载）
     local temp_path = paths.enabled
     local success, err = write_file(temp_path, content)
     if not success then

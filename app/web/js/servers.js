@@ -272,12 +272,16 @@ class ServersManager {
             if (this.isEditing.value) {
                 // 更新现有服务器
                 this.editForm.value.content = this.editorInstance.getValue(); // Get latest content
+                console.log('PUT - Editor content:', this.editForm.value.content);
+                console.log('PUT - Sending data:', { content: this.editForm.value.content });
                             response = await api.put(`/servers/${this.editForm.value.name}`, {
                                 content: this.editForm.value.content
                 });
             } else {
                 // 创建新服务器
                 this.editForm.value.content = this.editorInstance.getValue(); // Get latest content
+                console.log('POST - Editor content:', this.editForm.value.content);
+                console.log('POST - Sending data:', { content: this.editForm.value.content });
                             response = await api.post(`/servers/${this.editForm.value.name}`, {
                                 content: this.editForm.value.content
                 });

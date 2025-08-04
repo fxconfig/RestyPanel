@@ -19,20 +19,10 @@ api.interceptors.request.use(config => {
         config.headers.Authorization = `Bearer ${token}`;
     }
 
-    // 调试信息
-    console.log('Request interceptor - Original Content-Type:', config.headers['Content-Type']);
-    console.log('Request interceptor - URL:', config.url);
-
     // 如果没有明确设置 Content-Type，使用默认值
     if (!config.headers['Content-Type']) {
         config.headers['Content-Type'] = 'application/json';
-        console.log('Request interceptor - Set default Content-Type to application/json');
-    } else {
-        console.log('Request interceptor - Using existing Content-Type:', config.headers['Content-Type']);
     }
-
-    console.log('Request interceptor - Final headers:', config.headers);
-    console.log('Request interceptor - Final config:', config);
 
     return config;
 });

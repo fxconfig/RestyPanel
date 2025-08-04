@@ -272,45 +272,15 @@ class ServersManager {
             if (this.isEditing.value) {
                 // 更新现有服务器
                 this.editForm.value.content = this.editorInstance.getValue(); // Get latest content
-
-                // 使用 fetch API 直接发送请求，确保 Content-Type 正确
-                const token = localStorage.getItem('RestyPanel_token');
-                const fetchResponse = await fetch(`/asd1239axasd/api/servers/${this.editForm.value.name}`, {
-                    method: 'PUT',
-                    headers: {
-                        'Content-Type': 'text/plain',
-                        'Authorization': token ? `Bearer ${token}` : undefined
-                    },
-                    body: this.editForm.value.content
+                            response = await api.put(`/servers/${this.editForm.value.name}`, {
+                                content: this.editForm.value.content
                 });
-
-                if (!fetchResponse.ok) {
-                    throw new Error(`HTTP error! status: ${fetchResponse.status}`);
-                }
-
-                response = await fetchResponse.json();
-                response = { data: response }; // 包装成和 axios 一样的格式
             } else {
                 // 创建新服务器
                 this.editForm.value.content = this.editorInstance.getValue(); // Get latest content
-
-                // 使用 fetch API 直接发送请求，确保 Content-Type 正确
-                const token = localStorage.getItem('RestyPanel_token');
-                const fetchResponse = await fetch(`/asd1239axasd/api/servers/${this.editForm.value.name}`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'text/plain',
-                        'Authorization': token ? `Bearer ${token}` : undefined
-                    },
-                    body: this.editForm.value.content
+                            response = await api.post(`/servers/${this.editForm.value.name}`, {
+                                content: this.editForm.value.content
                 });
-
-                if (!fetchResponse.ok) {
-                    throw new Error(`HTTP error! status: ${fetchResponse.status}`);
-                }
-
-                response = await fetchResponse.json();
-                response = { data: response }; // 包装成和 axios 一样的格式
             }
 
             if (response && response.data && (response.data.code === 200 || response.data.code === 201)) {

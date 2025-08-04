@@ -383,30 +383,40 @@ function _M.create(context)
         return context.response.error("Server config already exists with status: " .. existing_status, 409)
     end
     
-    -- 获取请求体内容（纯文本）
+    -- 获取请求体内容（JSON格式）
     local body = context.body
     if not body then
         return context.response.error("Request body is required", 400)
     end
     
-    -- 确保 body 是字符串类型
-    if type(body) ~= "string" then
-        if type(body) == "table" then
-            body = cjson.encode(body)
+    -- 处理 JSON 格式的请求体
+    local content
+    if type(body) == "table" then
+        content = body.content
+    else
+        -- 如果是字符串，尝试解析为 JSON
+        local success, parsed = pcall(cjson.decode, body)
+        if success and parsed.content then
+            content = parsed.content
         else
-            body = tostring(body)
+            -- 向后兼容：如果不是 JSON 格式，直接使用原始内容
+            content = body
         end
+    end
+    
+    if not content or content == "" then
+        return context.response.error("Server configuration content is required", 400)
     end
     
     -- 直接写入 backup 文件
     local paths = get_server_paths(server_name)
-    local success, err = write_file(paths.backup, body)
+    local success, err = write_file(paths.backup, content)
     if not success then
         return context.response.error("Failed to create backup file: " .. err, 500)
     end
     
     -- 构建返回数据
-    local response_data = build_response_data(server_name, "backup", #body, context)
+    local response_data = build_response_data(server_name, "backup", #content, context)
     response_data.created_at = ngx.time()
         
     return context.response.success(response_data, "Server config created in backup state. Use action=test to validate.", 201, {
@@ -437,19 +447,29 @@ function _M.update(context)
         })
     end
     
-    -- 获取请求体内容
+    -- 获取请求体内容（JSON格式）
     local body = context.body
     if not body then
         return context.response.error("Request body is required", 400)
     end
     
-    -- 确保 body 是字符串类型
-    if type(body) ~= "string" then
-        if type(body) == "table" then
-            body = cjson.encode(body)
+    -- 处理 JSON 格式的请求体
+    local content
+    if type(body) == "table" then
+        content = body.content
+    else
+        -- 如果是字符串，尝试解析为 JSON
+        local success, parsed = pcall(cjson.decode, body)
+        if success and parsed.content then
+            content = parsed.content
         else
-            body = tostring(body)
+            -- 向后兼容：如果不是 JSON 格式，直接使用原始内容
+            content = body
         end
+    end
+    
+    if not content or content == "" then
+        return context.response.error("Server configuration content is required", 400)
     end
     
     -- 获取所有可能的路径
@@ -465,13 +485,13 @@ function _M.update(context)
     end
     
     -- 写入新的backup文件
-    local success, err = write_file(paths.backup, body)
+    local success, err = write_file(paths.backup, content)
     if not success then
         return context.response.error("Failed to create backup file: " .. err, 500)
     end
     
     -- 构建返回数据
-    local response_data = build_response_data(server_name, "backup", #body, context)
+    local response_data = build_response_data(server_name, "backup", #content, context)
     response_data.previous_status = existing_status
         
     return context.response.success(response_data, "Server config updated and saved as backup. Use action=test to validate.", 200, {

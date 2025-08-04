@@ -453,18 +453,25 @@ function _M.update(context)
         return context.response.error("Request body is required", 400)
     end
     
+    -- 调试信息
+    ngx.log(ngx.INFO, "Update - Request body type: " .. type(body))
+    ngx.log(ngx.INFO, "Update - Request body content: " .. cjson.encode(body))
+    
     -- 处理 JSON 格式的请求体
     local content
     if type(body) == "table" then
         content = body.content
+        ngx.log(ngx.INFO, "Update - Extracted content from table: " .. tostring(content))
     else
         -- 如果是字符串，尝试解析为 JSON
         local success, parsed = pcall(cjson.decode, body)
         if success and parsed.content then
             content = parsed.content
+            ngx.log(ngx.INFO, "Update - Extracted content from parsed JSON: " .. tostring(content))
         else
             -- 向后兼容：如果不是 JSON 格式，直接使用原始内容
             content = body
+            ngx.log(ngx.INFO, "Update - Using raw body as content: " .. tostring(content))
         end
     end
     

@@ -31,6 +31,9 @@ api.interceptors.request.use(config => {
         console.log('Request interceptor - Using existing Content-Type:', config.headers['Content-Type']);
     }
 
+    console.log('Request interceptor - Final headers:', config.headers);
+    console.log('Request interceptor - Final config:', config);
+
     return config;
 });
 

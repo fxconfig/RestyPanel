@@ -88,12 +88,20 @@ const ApiService = {
             const config = {
                 method,
                 url,
-                headers: {
-                    'Content-Type': 'application/json',
-                    ...options.headers
-                },
                 ...options
             };
+
+            // 设置默认的 Content-Type，但允许 options.headers 覆盖
+            if (!options.headers || !options.headers['Content-Type']) {
+                config.headers = {
+                    'Content-Type': 'application/json',
+                    ...config.headers
+                };
+            } else {
+                config.headers = {
+                    ...options.headers
+                };
+            }
             
             if (data) {
                 config.data = data;

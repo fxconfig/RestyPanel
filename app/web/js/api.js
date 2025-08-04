@@ -9,10 +9,7 @@ const API_CONFIG = {
 // 创建 axios 实例
 const api = axios.create({
     baseURL: '/asd1239axasd/api',
-    timeout: 10000,
-    headers: {
-        'Content-Type': 'application/json',
-    }
+    timeout: 10000
 });
 
 // 请求拦截器 - 添加认证 token
@@ -21,6 +18,12 @@ api.interceptors.request.use(config => {
     if (token) {
         config.headers.Authorization = `Bearer ${token}`;
     }
+
+    // 如果没有明确设置 Content-Type，使用默认值
+    if (!config.headers['Content-Type']) {
+        config.headers['Content-Type'] = 'application/json';
+    }
+
     return config;
 });
 
@@ -91,15 +94,15 @@ const ApiService = {
                 ...options
             };
 
-            // 设置默认的 Content-Type，但允许 options.headers 覆盖
-            if (!options.headers || !options.headers['Content-Type']) {
+            // 设置 headers
+            if (options.headers && options.headers['Content-Type']) {
+                // 如果明确设置了 Content-Type，使用提供的 headers
+                config.headers = options.headers;
+            } else {
+            // 否则使用默认的 Content-Type
                 config.headers = {
                     'Content-Type': 'application/json',
-                    ...config.headers
-                };
-            } else {
-                config.headers = {
-                    ...options.headers
+                    ...(options.headers || {})
                 };
             }
             

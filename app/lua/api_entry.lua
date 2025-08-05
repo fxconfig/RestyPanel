@@ -160,11 +160,17 @@ local function create_context(route, params)
             -- 检查Content-Type
             local content_type = ngx.req.get_headers()["Content-Type"] or ""
             
+            -- 添加调试信息
+            ngx.log(ngx.INFO, "Request Content-Type: " .. content_type)
+            ngx.log(ngx.INFO, "Raw body type: " .. type(body_raw))
+            ngx.log(ngx.INFO, "Raw body preview: " .. string.sub(tostring(body_raw), 1, 100))
+            
             -- 处理JSON类型
             if string.find(content_type, "application/json", 1, true) then
                 local success, parsed_body = pcall(cjson.decode, body_raw)
                 if success then
                     body_data = parsed_body
+                    ngx.log(ngx.INFO, "Parsed as JSON successfully")
                 else
                     ngx.log(ngx.WARN, "Failed to parse JSON body: ", body_raw)
                     body_data = {}
@@ -172,21 +178,52 @@ local function create_context(route, params)
             -- 处理文本类型（服务器配置等）
             elseif string.find(content_type, "text/plain", 1, true) or string.find(content_type, "text/html", 1, true) then
                 body_data = body_raw
+                ngx.log(ngx.INFO, "Using raw body for text/plain")
             -- 其他类型，尝试解析JSON，失败则返回原始内容
             else
+                ngx.log(ngx.INFO, "Unknown content type, trying JSON first")
                 local success, parsed_body = pcall(cjson.decode, body_raw)
                 if success then
                     body_data = parsed_body
+                    ngx.log(ngx.INFO, "Parsed unknown type as JSON")
                 else
                     body_data = body_raw
+                    ngx.log(ngx.INFO, "Using raw body for unknown type")
                 end
             end
         else
-            -- 检查是否有文件上传
+            -- 检查是否有文件上传（当请求体太大时会保存到临时文件）
             local body_file = ngx.req.get_body_file()
             if body_file then
-                ngx.log(ngx.WARN, "Request body saved to file: ", body_file)
-                body_data = {}
+                ngx.log(ngx.INFO, "Request body saved to file: ", body_file)
+                -- 读取临时文件内容
+                local file = io.open(body_file, "r")
+                if file then
+                    local file_content = file:read("*a")
+                    file:close()
+                    
+                    -- 根据 Content-Type 处理文件内容
+                    local content_type = ngx.req.get_headers()["Content-Type"] or ""
+                    if string.find(content_type, "text/plain", 1, true) then
+                        body_data = file_content
+                        ngx.log(ngx.INFO, "Using file content for text/plain, length: " .. #file_content)
+                    elseif string.find(content_type, "application/json", 1, true) then
+                        local success, parsed_body = pcall(cjson.decode, file_content)
+                        if success then
+                            body_data = parsed_body
+                            ngx.log(ngx.INFO, "Parsed file content as JSON")
+                        else
+                            body_data = file_content
+                            ngx.log(ngx.INFO, "Failed to parse file content as JSON, using raw content")
+                        end
+                    else
+                        body_data = file_content
+                        ngx.log(ngx.INFO, "Using raw file content for unknown type")
+                    end
+                else
+                    ngx.log(ngx.ERR, "Failed to read body file: ", body_file)
+                    body_data = {}
+                end
             end
         end
     end

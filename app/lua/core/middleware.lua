@@ -60,7 +60,7 @@ function _M.session_auth(options)
     
     return function(context)
         -- 添加调试日志
-        ngx.log(ngx.INFO, "JWT Auth middleware - checking path: ", context.uri)
+        ngx.log(ngx.DEBUG, "JWT Auth middleware - checking path: ", context.uri)
         
         -- 检查是否跳过认证
         for _, path in ipairs(skip_paths) do
@@ -73,7 +73,7 @@ function _M.session_auth(options)
             end
         end
         
-        ngx.log(ngx.INFO, "JWT Auth middleware - authenticating path: ", context.uri)
+        ngx.log(ngx.DEBUG, "JWT Auth middleware - authenticating path: ", context.uri)
         
         -- 获取Authorization头
         local auth_header = context.headers["Authorization"] or context.headers["authorization"]

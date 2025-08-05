@@ -93,13 +93,15 @@ const ApiService = {
                 url,
                 ...options
             };
-
+            console.log('Request config:', config);
             // 设置 headers
             if (options.headers && options.headers['Content-Type']) {
                 // 如果明确设置了 Content-Type，使用提供的 headers
+                console.log('Setting headers from options:', options.headers);
                 config.headers = options.headers;
             } else {
             // 否则使用默认的 Content-Type
+                console.log('Setting default headers');
                 config.headers = {
                     'Content-Type': 'application/json',
                     ...(options.headers || {})
@@ -135,6 +137,7 @@ const ApiService = {
 
     // PUT 请求
     async put(url, data, options = {}) {
+        console.log('PUT request:', url, data, options);
         return this.request('PUT', url, data, options);
     },
 

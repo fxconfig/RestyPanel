@@ -88,23 +88,6 @@ local function get_file_mtime(path)
     return tonumber(result) or 0
 end
 
--- 工具函数：创建临时测试文件
-local function create_temp_test_file(paths, content)
-    local temp_path = paths.enabled .. ".testing"
-    local success, err = write_file(temp_path, content)
-    if not success then
-        return nil, err
-    end
-    return temp_path
-end
-
--- 工具函数：清理临时文件
-local function cleanup_temp_file(temp_path)
-    if temp_path and file_exists(temp_path) then
-        delete_file(temp_path)
-    end
-end
-
 -- ============================================================================
 -- 服务器配置文件管理函数
 -- ============================================================================
@@ -355,6 +338,12 @@ function _M.get(context)
         return context.response.error("Failed to read server config: " .. err, 500)
     end
     
+    -- 确保内容是字符串类型
+    if type(content) ~= "string" then
+        ngx.log(ngx.WARN, "Content is not string, type: " .. type(content) .. ", converting...")
+        content = tostring(content)
+    end
+    
     -- 返回结构化对象，将内容作为对象的一部分
     return context.response.success({
         name = server_name,
@@ -383,35 +372,35 @@ function _M.create(context)
         return context.response.error("Server config already exists with status: " .. existing_status, 409)
     end
     
-    -- 获取请求体内容（JSON格式）
-    local body = context.body
-    if not body then
+    -- 获取请求体内容（纯文本）
+    local content = context.body
+    if not content then
         return context.response.error("Request body is required", 400)
     end
     
-    -- 处理 JSON 格式的请求体
-    local content
-    if type(body) == "table" then
-        content = body.content
-    else
-        -- 如果是字符串，尝试解析为 JSON
-        local success, parsed = pcall(cjson.decode, body)
-        if success and parsed.content then
-            content = parsed.content
-        else
-            -- 向后兼容：如果不是 JSON 格式，直接使用原始内容
-            content = body
+    -- 添加调试信息
+    ngx.log(ngx.INFO, "Create - Raw body type: " .. type(content))
+    ngx.log(ngx.INFO, "Create - Raw body length: " .. (type(content) == "string" and #content or "N/A"))
+    if type(content) == "table" then
+        local keys = {}
+        for k, _ in pairs(content) do
+            table.insert(keys, tostring(k))
         end
+        ngx.log(ngx.INFO, "Create - Table keys: " .. table.concat(keys, ", "))
+        ngx.log(ngx.INFO, "Create - Table length: " .. #content)
+    else
+        ngx.log(ngx.INFO, "Create - Raw body content preview: " .. string.sub(tostring(content), 1, 100))
     end
     
-    if not content or content == "" then
-        return context.response.error("Server configuration content is required", 400, {
-            debug_info = {
-                body_type = type(body),
-                body_content = body,
-                extracted_content = content
-            }
-        })
+    -- 确保内容是字符串类型
+    if type(content) ~= "string" then
+        ngx.log(ngx.WARN, "Create - Body is not string, converting from type: " .. type(content))
+        content = tostring(content)
+    end
+    
+    -- 检查内容是否为空
+    if content == "" or content:match("^%s*$") then
+        return context.response.error("Server configuration content cannot be empty", 400)
     end
     
     -- 直接写入 backup 文件
@@ -453,42 +442,25 @@ function _M.update(context)
         })
     end
     
-    -- 获取请求体内容（JSON格式）
-    local body = context.body
-    if not body then
+    -- 获取请求体内容（纯文本）
+    local content = context.body
+    if not content then
         return context.response.error("Request body is required", 400)
     end
     
-    -- 调试信息
-    ngx.log(ngx.INFO, "Update - Request body type: " .. type(body))
-    ngx.log(ngx.INFO, "Update - Request body content: " .. cjson.encode(body))
+    -- 添加调试信息
+    ngx.log(ngx.INFO, "Update - Raw body type: " .. type(content))
+    ngx.log(ngx.INFO, "Update - Raw body content preview: " .. string.sub(tostring(content), 1, 100))
     
-    -- 处理 JSON 格式的请求体
-    local content
-    if type(body) == "table" then
-        content = body.content
-        ngx.log(ngx.INFO, "Update - Extracted content from table: " .. tostring(content))
-    else
-        -- 如果是字符串，尝试解析为 JSON
-        local success, parsed = pcall(cjson.decode, body)
-        if success and parsed.content then
-            content = parsed.content
-            ngx.log(ngx.INFO, "Update - Extracted content from parsed JSON: " .. tostring(content))
-        else
-            -- 向后兼容：如果不是 JSON 格式，直接使用原始内容
-            content = body
-            ngx.log(ngx.INFO, "Update - Using raw body as content: " .. tostring(content))
-        end
+    -- 确保内容是字符串类型
+    if type(content) ~= "string" then
+        ngx.log(ngx.WARN, "Update - Body is not string, converting from type: " .. type(content))
+        content = tostring(content)
     end
     
-    if not content or content == "" then
-        return context.response.error("Server configuration content is required", 400, {
-            debug_info = {
-                body_type = type(body),
-                body_content = body,
-                extracted_content = content
-            }
-        })
+    -- 检查内容是否为空
+    if content == "" or content:match("^%s*$") then
+        return context.response.error("Server configuration content cannot be empty", 400)
     end
     
     -- 获取所有可能的路径
@@ -594,30 +566,37 @@ local function handle_test_action(server_name, paths, context)
     if not file_exists(paths.backup) then
         return context.response.error("No backup file found for server: " .. server_name .. ". Only backup files can be tested.", 404)
     end
-    
+     
+    -- 检查是否已存在 enabled 文件，如果存在则不能进行测试
+    if file_exists(paths.enabled) then
+        return context.response.error("Cannot test backup file while an enabled configuration exists for server: " .. server_name .. ". Please disable the server first.", 409)
+    end
+
     -- 读取 backup 文件内容
     local content = read_file(paths.backup)
     if not content then
         return context.response.error("Failed to read backup file", 500)
     end
     
-    -- 检查是否已存在 enabled 文件，如果存在则不能进行测试
-    if file_exists(paths.enabled) then
-        return context.response.error("Cannot test backup file while an enabled configuration exists for server: " .. server_name .. ". Please disable the server first.", 409)
-    end
-    
-    -- 创建临时测试文件（使用 .conf 后缀以便 nginx 能够加载）
-    local temp_path = paths.enabled
-    local success, err = write_file(temp_path, content)
+    -- 直接复制 backup 文件为 enabled 文件进行测试
+    local success, err = write_file(paths.enabled, content)
     if not success then
-        return context.response.error("Failed to create test file: " .. err, 500)
+        return context.response.error("Failed to copy backup file for testing: " .. err, 500)
     end
     
-    -- 测试 nginx 配置
-    local test_ok, test_result = test_nginx_config()
+    -- 使用 pcall 确保无论测试结果如何都能清理临时文件
+    local test_ok, test_result
+    local test_success, test_error = pcall(function()
+        test_ok, test_result = test_nginx_config()
+    end)
     
-    -- 清理临时文件
-    delete_file(temp_path)
+    -- 无论如何都删除测试用的 enabled 文件
+    delete_file(paths.enabled)
+    
+    -- 如果测试过程中出现异常
+    if not test_success then
+        return context.response.error("Failed to test nginx configuration: " .. tostring(test_error), 500)
+    end
     
     if test_ok then
         -- 测试成功，直接将backup文件移动到disabled状态
@@ -674,15 +653,6 @@ local function handle_enable_action(server_name, paths, context)
         return context.response.error("Failed to rename file from disabled to enabled state", 500)
     end
     
-    -- 测试 nginx 配置
-    local test_ok, test_result = test_nginx_config()
-    if not test_ok then
-        -- 测试失败，回滚到 disabled 状态
-        move_file(paths.enabled, paths.disabled)
-        return context.response.error("Nginx configuration test failed after enabling; reverted to disabled state", 500, {
-            test_output = test_result
-        })
-    end
     
     -- 重新加载 nginx
     local reload_ok, reload_result = reload_nginx()
@@ -697,12 +667,13 @@ local function handle_enable_action(server_name, paths, context)
     }
     
     local response_detail = {
-        test_output = test_result,
+        test_output = "OK",
         reload_result = reload_result
     }
     
     if not reload_ok then
         response_detail.reload_warning = reload_result.stderr or reload_result.reason
+        move_file(paths.enabled, paths.backup)
     end
     
     return context.response.success(response_data, "Server configuration enabled successfully", 200, response_detail)

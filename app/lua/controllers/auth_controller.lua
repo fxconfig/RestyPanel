@@ -49,8 +49,8 @@ end
 
 -- 验证JWT token
 local function verify_jwt_token(token, secret)
-    ngx.log(ngx.INFO, "Verifying JWT token length: ", string.len(token))
-    ngx.log(ngx.INFO, "Using secret length: ", string.len(secret))
+    -- ngx.log(ngx.INFO, "Verifying JWT token length: ", string.len(token))
+    -- ngx.log(ngx.INFO, "Using secret length: ", string.len(secret))
     
     -- 直接使用静态方法
     local jwt_obj = jwt:verify(secret, token)

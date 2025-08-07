@@ -28,8 +28,7 @@ end
 -- 生成JWT token
 local function generate_jwt_token(payload, secret)
     -- 添加调试日志
-    ngx.log(ngx.INFO, "Generating JWT with payload: ", cjson.encode(payload))
-    ngx.log(ngx.INFO, "Using secret length: ", string.len(secret))
+    ngx.log(ngx.DEBUG, "Generating JWT with payload: ", cjson.encode(payload), "Using secret length: ", string.len(secret))
     
     -- 直接使用静态方法
     local jwt_token = jwt:sign(
@@ -43,7 +42,7 @@ local function generate_jwt_token(payload, secret)
         }
     )
     
-    ngx.log(ngx.INFO, "Generated JWT token length: ", jwt_token and string.len(jwt_token) or "nil")
+    ngx.log(ngx.DEBUG, "Generated JWT token length: ", jwt_token and string.len(jwt_token) or "nil")
     return jwt_token
 end
 
@@ -55,7 +54,7 @@ local function verify_jwt_token(token, secret)
     -- 直接使用静态方法
     local jwt_obj = jwt:verify(secret, token)
     
-    ngx.log(ngx.INFO, "JWT verification result - valid: ", jwt_obj.valid, ", reason: ", jwt_obj.reason or "none")
+    ngx.log(ngx.DEBUG, "JWT verification result - valid: ", jwt_obj.valid, ", reason: ", jwt_obj.reason or "none")
     
     if not jwt_obj.valid then
         return false, jwt_obj.reason or "Invalid token"

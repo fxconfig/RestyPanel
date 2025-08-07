@@ -220,9 +220,6 @@ components.css 文件是组件样式文件，包含可复用组件和控件样�
     background-color: rgba(102, 126, 234, 0.1);
 }
 
-.checker-status.checking {
-    color: #3b82f6;
-}
 /* 下拉菜单 */
 .dropdown {
     position: relative;

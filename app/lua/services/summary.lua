@@ -90,9 +90,9 @@ function _M.log()
             uri = ngx.var.host..uri
         end
         key_status = KEY_URI_STATUS..(uri or '').."_"..status_code
-        key_size = KEY_URI_SIZE..uri
-        key_time = KEY_URI_TIME..uri
-        key_count = KEY_URI_COUNT..uri
+        key_size = KEY_URI_SIZE..(uri or '')
+        key_time = KEY_URI_TIME..(uri or '')
+        key_count = KEY_URI_COUNT..(uri or '')
     end
     
     if config.configs.summary.group_persistent_enable == true then

@@ -14,10 +14,10 @@ if ngx.var.vn_exec_flag and ngx.var.vn_exec_flag ~= '' then
 end
 
 -- 执行常规的访问控制和安全检查（仅对非API请求）
-summary.pre_run_matcher()
+-- summary.pre_run_matcher()
 
-filter.filter()
-browser_verify.filter()
+-- filter.filter()
+-- browser_verify.filter()
 frequency_limit.filter()
 
 -- 注意：API请求现在由nginx location直接处理，不再经过此文件
